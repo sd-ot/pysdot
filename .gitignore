@@ -1,0 +1,13 @@
+results/
+.vscode/
+build/
+hugo/
+ext/
+__pycache__
+.pysdot*
+.env
+*.egg-info
+*.so
+*.o
+*.egg
+dist/
