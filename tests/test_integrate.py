@@ -1,5 +1,5 @@
 from pysdot.domain_types import ConvexPolyhedraAssembly
-from pysdot import radial_funcs
+from pysdot.radial_funcs import RadialFuncEntropy
 from pysdot import PowerDiagram
 import numpy as np
 import unittest
@@ -38,7 +38,7 @@ class TestIntegrate_2D(unittest.TestCase):
         # wolfram: N[ Integrate[ Integrate[ x * Exp[ ( 0 - x*x - y*y ) / 0.1 ], { x, 0, 1 } ], { y, 0, 1 } ] ] / N[ Integrate[ Integrate[ Exp[ ( 0 - x*x - y*y ) / 0.1 ], { x, 0, 1 } ], { y, 0, 1 } ] ]
         def tg(position, w, eps, ei, ec):
             pd = PowerDiagram(
-                radial_func=radial_funcs.RadialFuncEntropy(eps),
+                radial_func=RadialFuncEntropy(eps),
                 domain=self.domain
             )
             pd.set_positions([position])
