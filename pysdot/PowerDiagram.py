@@ -1,6 +1,7 @@
 from .radial_funcs import RadialFuncUnit
 from .cpp import cpp_module
 import numpy as np
+import os
 
 
 class PowerDiagram:
@@ -52,6 +53,19 @@ class PowerDiagram:
             self.weights,
             self.domain._inst,
             self.radial_func.name()
+        )
+
+    def display_vtk(self, filename):
+        dn = os.path.dirname(filename)
+        if len(dn):
+            os.makedirs(dn, exist_ok=True)
+        inst = self.update_if_necessary()
+        return inst.display_vtk(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name(),
+            filename
         )
 
     def update_if_necessary(self):

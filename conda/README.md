@@ -4,6 +4,12 @@ conda build . --output
 anaconda login
 anaconda upload -u sdot xxx.tar.bz2
 
+---------- Complete process for windows
+download visual studio
+download miniconda
+launch anaconda prompt
+conda install git
+
 ---------- To test if it works (e.g. from a docker instance)
 # sudo docker run -i -t debian /bin/bash
 apt-get update && apt-get upgrade -y -q && apt-get dist-upgrade -y -q && apt-get -y -q autoclean && apt-get -y -q autoremove

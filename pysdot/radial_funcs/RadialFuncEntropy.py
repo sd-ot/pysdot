@@ -5,3 +5,6 @@ class RadialFuncEntropy:
 
     def name(self):
         return self.s
+
+    def need_rb_corr(self):
+        return False
