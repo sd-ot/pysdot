@@ -1,0 +1,36 @@
+package:
+  name: sdot
+  version: 0.0.1
+
+source:
+  url: https://github.com/sd-ot/pysdot/archive/master.zip
+  # sha1: 958ae70baf186263a4bd801a81dd5d682aedd1db
+
+# test:
+#   files:
+#     - test.xml
+#   commands:
+#     - xmllint test.xml
+
+requirements:
+  build:
+    - {{ compiler('cxx') }}
+  host:
+    - setuptools
+    - pybind11
+    - python
+    - eigen
+    - numpy
+  run:
+    - python
+    - numpy
+
+about:
+  home: https://github.com/sd-ot/pysdot
+  license: MIT
+  license_family: MIT
+  summary: Semi-discrete Optimal Transportation tools
+  description: |
+     Tools for semi-discrete optimal transportation.
+     Includes power diagram, integration on laguerre cells 
+     for different densities and radial functions, ...

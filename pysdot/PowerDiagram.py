@@ -4,13 +4,16 @@ import numpy as np
 
 
 class PowerDiagram:
-    def __init__(self, radial_func=RadialFuncUnit()):
+    def __init__(self, domain=None, radial_func=RadialFuncUnit()):
         self.positions_are_new = True
         self.weights_are_new = True
         self.domain_is_new = True
 
         self.radial_func = radial_func
         self._inst = None
+
+        if domain:
+            self.set_domain(domain)
 
     def set_positions(self, positions):
         self.positions_are_new = True
@@ -27,6 +30,15 @@ class PowerDiagram:
     def integrals(self):
         inst = self.update_if_necessary()
         return inst.integrals(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name()
+        )
+
+    def centroids(self):
+        inst = self.update_if_necessary()
+        return inst.centroids(
             self.positions,
             self.weights,
             self.domain._inst,

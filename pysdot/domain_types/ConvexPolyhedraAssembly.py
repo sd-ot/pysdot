@@ -23,6 +23,22 @@ class ConvexPolyhedraAssembly:
             np.uint64(cut_id)
         )
 
+    def measure(self):
+        if self._inst:
+            return self._inst.measure()
+        return self._type(0)
+
+    def _update_inst(self, dimensions):
+        if self._inst:
+            return
+        
+        for i in range(1, len(dimensions)):
+            assert(dimensions[i] == dimensions[0])
+
+        module = cpp_module.module_for_type_and_dim(self._type, dimensions[0])
+        self._inst = module.ConvexPolyhedraAssembly()
+        return self._inst
+
     # def sub_box(self, min_pos, max_pos, coeff=1.0, cut_id=-1):
     #     self.add_box( min_pos, max_pos, - coeff, cut_id )
 
@@ -52,23 +68,6 @@ class ConvexPolyhedraAssembly:
     # def max_position( self ):
     #     return self._inst.max_position()
 
-    def measure(self):
-        if self._inst:
-            return self._inst.measure()
-        return self._type(0)
-
     # # True if points is contained
     # def contains( self, point ):
     #     return self.coeff_at( point ) != 0
-
-    def _update_inst(self, dimensions):
-        if self._inst:
-            return
-        
-        for i in range(1, len(dimensions)):
-            assert(dimensions[i] == dimensions[0])
-
-        module = cpp_module.module_for_type_and_dim(self._type, dimensions[0])
-        self._inst = module.ConvexPolyhedraAssembly()
-        return self._inst
-
