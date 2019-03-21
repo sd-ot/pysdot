@@ -1,11 +1,22 @@
----------- Complete process:
+---------- Complete build process
 git clone http://github.com/sd-ot/pysdot.git
-cd pysdot/conda
+cd pysdot/scripts/conda
 
-conda install anaconda anaconda-client conda-build
-conda build . --output
+conda create -n build_sdot_3.4 python=3.4
+conda create -n build_sdot_3.5 python=3.5
+conda create -n build_sdot_3.6 python=3.6
+conda create -n build_sdot_3.7 python=3.7
+
+conda install -n build_sdot_3.4 anaconda anaconda-client conda-build
+conda install -n build_sdot_3.5 anaconda anaconda-client conda-build
+conda install -n build_sdot_3.6 anaconda anaconda-client conda-build
+conda install -n build_sdot_3.7 anaconda anaconda-client conda-build
+
+conda activate build_sdot_3.7
 anaconda login
+conda build . --output
 anaconda upload -u sdot xxx.tar.bz2
+conda deactivate
 
 ---------- Complete process for windows
 download visual studio
@@ -22,8 +33,9 @@ curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 chmod 777 Miniconda3-latest-Linux-x86_64.sh
 ./Miniconda3-latest-Linux-x86_64.sh -b
 . /root/miniconda3/etc/profile.d/conda.sh
+conda create --name test_sdot
 
-conda install -c hugo_lec sdot
-conda activate
+conda activate test_sdot
+conda install -c hugo_lec pysdot
 
 
