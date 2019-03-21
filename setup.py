@@ -15,6 +15,7 @@ for TF in ["double"]:
                 ('PD_TYPE', TF),
                 ('PD_DIM', str(dim))
             ],
+            language='c++',
             extra_compile_args=['-march=native', '-ffast-math'],
         ))
 
