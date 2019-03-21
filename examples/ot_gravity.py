@@ -9,10 +9,6 @@ import numpy as np
 # objective function
 def obj(x, ot, new_barycenters):
     pos = x.reshape((-1, 2))
-    # if pos[0, 1] < 0:
-    #     d = (0.5-pos[0, 0])**2 + (0.5-pos[0, 1])**2
-    #     w = np.array([d])
-    #     ot.set_weights(w)
     ot.set_positions(pos)
     ot.update_weights()
 
@@ -50,16 +46,6 @@ def run(n, base_filename, l=0.5):
     ot.set_positions(ot.get_centroids())
     ot.display_vtk(base_filename + "0.vtk")
 
-    # ys = []
-    # values = []
-    # new_barycenters = np.array([[radius, 0.2]])
-    # for y in np.linspace(-1, 1, 300):
-    #     x = np.array([radius, y])
-    #     ys.append(y)
-    #     values.append(obj(x, ot, new_barycenters))
-    # plt.plot(ys, values)
-    # plt.show()
-
     velocity = 0.0 * positions
 
     for num_iter in range(200):
@@ -93,6 +79,7 @@ def run(n, base_filename, l=0.5):
         print(positions, velocity)
 
         # display
+        ot.pd.display_vtk_points(base_filename + "pts_{}.vtk".format(num_iter + 1))
         ot.display_vtk(base_filename + "{}.vtk".format(num_iter + 1))
 
 

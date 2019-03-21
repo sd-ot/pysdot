@@ -68,6 +68,16 @@ class PowerDiagram:
             filename
         )
 
+    def display_vtk_points(self, filename):
+        dn = os.path.dirname(filename)
+        if len(dn):
+            os.makedirs(dn, exist_ok=True)
+        inst = self.update_if_necessary()
+        return inst.display_vtk_points(
+            self.positions,
+            filename
+        )
+
     def update_if_necessary(self):
         # check types
         if not isinstance(self.positions, np.ndarray):

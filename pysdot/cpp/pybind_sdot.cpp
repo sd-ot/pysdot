@@ -366,6 +366,17 @@ struct PyPowerDiagramZGrid {
         vtk_output.save( filename );
     }
 
+    void display_vtk_points( pybind11::array_t<PD_TYPE> &positions, const char *filename ) {
+        sdot::VtkOutput<1> vtk_output( { "num" } );
+
+        auto buf_positions = positions.request();
+        auto ptr_positions = reinterpret_cast<const Pt *>( buf_positions.ptr );
+        for( std::size_t n = 0; n < positions.shape( 0 ); ++n )
+            vtk_output.add_point( ptr_positions[ n ], { TF( n ) } );
+
+        vtk_output.save( filename );
+    }
+
     Grid grid;
 };
 
@@ -402,6 +413,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( "der_integrals_wrt_weights", &PowerDiagramZGrid::der_integrals_wrt_weights   , "" )
         .def( "centroids"                , &PowerDiagramZGrid::centroids                   , "" )
         .def( "display_vtk"              , &PowerDiagramZGrid::display_vtk                 , "" )
+        .def( "display_vtk_points"       , &PowerDiagramZGrid::display_vtk_points          , "" )
     ;
 
     //    m.def( "display_asy"                  , &display_asy                   );

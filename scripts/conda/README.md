@@ -2,21 +2,13 @@
 git clone http://github.com/sd-ot/pysdot.git
 cd pysdot/scripts/conda
 
-conda create -n build_sdot_3.4 python=3.4
-conda create -n build_sdot_3.5 python=3.5
-conda create -n build_sdot_3.6 python=3.6
-conda create -n build_sdot_3.7 python=3.7
+conda activate
+conda install anaconda anaconda-client conda-build
+conda build . --output --python=3.7
 
-conda install -n build_sdot_3.4 anaconda anaconda-client conda-build
-conda install -n build_sdot_3.5 anaconda anaconda-client conda-build
-conda install -n build_sdot_3.6 anaconda anaconda-client conda-build
-conda install -n build_sdot_3.7 anaconda anaconda-client conda-build
-
-conda activate build_sdot_3.7
 anaconda login
-conda build . --output
 anaconda upload -u sdot xxx.tar.bz2
-conda deactivate
+
 
 ---------- Complete process for windows
 download visual studio
