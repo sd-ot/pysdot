@@ -8,13 +8,14 @@ import numpy as np
 
 
 class OptimalTransport:
-    def __init__(self, domain, radial_func=RadialFuncUnit(), obj_max_dw=1e-7):
+    def __init__(self, domain, radial_func=RadialFuncUnit(), obj_max_dw=1e-8):
         self.pd = PowerDiagram(domain, radial_func)
         self.obj_max_dw = obj_max_dw
 
         self.masses_are_new = True
         self.masses = None
 
+        self.verbosity = 0
         self.max_iter = 10
         self.delta_w = []
 
@@ -33,6 +34,12 @@ class OptimalTransport:
     def set_masses(self, new_masses):
         self.masses_are_new = True
         self.masses = new_masses
+
+    def get_centroids(self):
+        return self.pd.centroids()
+
+    def display_vtk(self, filename):
+        self.pd.display_vtk(filename)
 
     def update_weights(self):
         if self.masses is None:
@@ -86,7 +93,8 @@ class OptimalTransport:
             self.pd.set_weights(self.pd.weights - x)
 
             nx = np.max(np.abs(x))
-            print("max dw:", nx)
+            if self.verbosity:
+                print("max dw:", nx)
 
             if nx < self.obj_max_dw:
                 break

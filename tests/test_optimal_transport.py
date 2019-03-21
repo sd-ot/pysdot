@@ -50,8 +50,8 @@ class TestOptimalTransport(unittest.TestCase):
 
             # integrals
             areas = ot.pd.integrals()
-            self.assertAlmostEqual(np.min(areas), mass, places=6 )
-            self.assertAlmostEqual(np.max(areas), mass, places=6 )
+            self.assertAlmostEqual(np.min(areas), mass, places=6)
+            self.assertAlmostEqual(np.max(areas), mass, places=6)
 
             # ot.pd.display_vtk("results/vtk/pd.vtk")
 

@@ -1,5 +1,5 @@
 package:
-  name: sdot
+  name: pysdot
   version: 0.0.1
 
 source:
@@ -22,7 +22,6 @@ requirements:
     - eigen
     - numpy
   run:
-    - petsc4py
     - python
     - numpy
 
