@@ -19,11 +19,11 @@ requirements:
     - setuptools
     - pybind11
     - python
-    - eigen
     - numpy
   run:
     - python
     - numpy
+    - scipy
 
 about:
   home: https://github.com/sd-ot/pysdot
