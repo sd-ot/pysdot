@@ -9,7 +9,7 @@ for TF in ["double"]:
         ext_modules.append(Extension(
             name,
             sources=['pysdot/cpp/pybind_sdot.cpp'],
-            include_dirs=['ext/pybind11/include'],
+            include_dirs=['ext/pybind11/include', 'ext'],
             define_macros=[
                 ('PD_MODULE_NAME', name),
                 ('PD_TYPE', TF),
