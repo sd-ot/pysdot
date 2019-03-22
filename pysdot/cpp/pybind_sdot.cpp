@@ -371,7 +371,7 @@ struct PyPowerDiagramZGrid {
 
         auto buf_positions = positions.request();
         auto ptr_positions = reinterpret_cast<const Pt *>( buf_positions.ptr );
-        for( std::size_t n = 0; n < positions.shape( 0 ); ++n )
+        for( int n = 0; n < positions.shape( 0 ); ++n )
             vtk_output.add_point( ptr_positions[ n ], { TF( n ) } );
 
         vtk_output.save( filename );

@@ -4,20 +4,21 @@ cd pysdot/scripts/conda
 
 conda activate
 conda install anaconda anaconda-client conda-build
-conda build . --output --python=3.7
 
+conda build . --output --python=3.7
 anaconda login
 anaconda upload -u sdot xxx.tar.bz2
 
 
 ---------- Complete process for windows
-download visual studio
+download visual studio 2015
 download miniconda
 launch anaconda prompt
 conda install git
 
-pip install mpi4py
-pip install petsc petsc4py
+conda build . --output --python=3.7
+anaconda login
+anaconda upload -u sdot xxx.tar.bz2
 
 ---------- To test if it works (e.g. from a docker instance)
 # docker run -it debian /bin/bash
