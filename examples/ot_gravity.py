@@ -8,6 +8,7 @@ import numpy as np
 
 # objective function
 def obj(x, ot, new_barycenters):
+    # ot.set_weights(ot.get_weights()*0 + 1e-3)
     pos = x.reshape((-1, 2))
     ot.set_positions(pos)
     ot.update_weights()
@@ -16,8 +17,7 @@ def obj(x, ot, new_barycenters):
     dlt = new_barycenters - prp
     dlp = pos - new_barycenters
     return np.sum(dlt**2) \
-        + 1e-3 * np.sum(dlp**2) \
-        + 1e-3 * np.sum(ot.get_weights()**2)
+        + 1e-2 * np.sum(dlp**2)
 
 
 def run(n, base_filename, l=0.5):
@@ -27,7 +27,10 @@ def run(n, base_filename, l=0.5):
 
     # initial positions, weights and masses
     positions = []
-    radius = l / (2 * (n - 1))
+    if n == 1:
+        radius = 0.2
+    else:
+        radius = l / (2 * (n - 1))
     for y in np.linspace(radius, l - radius, n):
         for x in np.linspace(radius, l - radius, n):
             nx = x + 0.2 * radius * (np.random.rand() - 0.5)
@@ -43,8 +46,9 @@ def run(n, base_filename, l=0.5):
     ot.set_positions(positions)
     ot.update_weights()
 
-    ot.set_positions(ot.get_centroids())
     ot.display_vtk(base_filename + "0.vtk")
+
+    ot.set_positions(ot.get_centroids())
 
     velocity = 0.0 * positions
 
@@ -66,7 +70,7 @@ def run(n, base_filename, l=0.5):
             (ot, b_n),
             tol=1e-4,
             method='BFGS',
-            options={'eps': 1e-3 * radius}
+            options={'eps': 1e-4 * radius}
         )
 
         positions = ropt.x.reshape((-1, 2))
@@ -83,4 +87,4 @@ def run(n, base_filename, l=0.5):
         ot.display_vtk(base_filename + "{}.vtk".format(num_iter + 1))
 
 
-run(10, "results/pd_")
+run(5, "results/pd_")

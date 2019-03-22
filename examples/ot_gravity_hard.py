@@ -7,6 +7,7 @@ import numpy as np
 def run(n, base_filename):
     domain = ConvexPolyhedraAssembly()
     domain.add_box([0, 0], [1, 1])
+    domain.add_box([0.2, -0.5], [0.8, 0])
 
     positions = []
     radius = 0.5 / (2 * (n - 1))
@@ -17,7 +18,7 @@ def run(n, base_filename):
 
     #
     ot = OptimalTransport(domain, RadialFuncInBall())
-    ot.set_masses(np.ones(nb_diracs) * 1.2 * 0.5**2 / nb_diracs)
+    ot.set_masses(np.ones(nb_diracs) * 0.8 * 0.5**2 / nb_diracs)
     ot.set_weights(np.ones(nb_diracs) * radius**2)
     ot.set_positions(np.array(positions))
     b_old = ot.pd.centroids()
@@ -50,4 +51,4 @@ def run(n, base_filename):
         ot.set_positions(b_new)
         b_old = b_new
 
-run(10, "results/pdhard_")
+run(20, "results/pdhard_")

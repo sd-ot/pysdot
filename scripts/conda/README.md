@@ -16,6 +16,9 @@ download miniconda
 launch anaconda prompt
 conda install git
 
+pip install mpi4py
+pip install petsc petsc4py
+
 ---------- To test if it works (e.g. from a docker instance)
 # docker run -it debian /bin/bash
 cd
