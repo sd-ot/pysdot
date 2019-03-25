@@ -9,6 +9,12 @@ conda build . --output --python=3.7
 anaconda login
 anaconda upload -u sdot xxx.tar.bz2
 
+--------- installation
+
+conda install -c sdot pysdot 
+
+--------- install macosx
+VBoxManage registervm 
 
 ---------- Complete process for windows
 download visual studio 2015

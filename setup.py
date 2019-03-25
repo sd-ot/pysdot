@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
 
 from setuptools import setup, find_packages, Extension
+import sys
+
+extra_compile_args = []
+if sys.platform == 'darwin':
+    extra_compile_args.append("-std=c++11")
+if sys.platform == 'linux':
+    extra_compile_args.append("-march=native")
+    extra_compile_args.append("-ffast-math")
 
 ext_modules = []
 for TF in ["double"]:
@@ -16,7 +24,7 @@ for TF in ["double"]:
                 ('PD_DIM', str(dim))
             ],
             language='c++',
-            extra_compile_args=['-march=native', '-ffast-math'],
+            extra_compile_args=extra_compile_args,
         ))
 
 setup(
