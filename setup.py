@@ -6,6 +6,7 @@ import sys
 extra_compile_args = []
 if sys.platform == 'darwin':
     extra_compile_args.append("-std=c++11")
+    extra_compile_args.append("-stdlib=libc++")
 if sys.platform == 'linux':
     extra_compile_args.append("-march=native")
     extra_compile_args.append("-ffast-math")
