@@ -8,6 +8,7 @@
 
 #include "../../ext/sdot/src/sdot/PowerDiagram/Visitors/SpZGrid.h"
 
+#include "../../ext/sdot/src/sdot/PowerDiagram/get_der_integrals_wrt_weight_and_positions.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_integrals_wrt_weights.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_integrals.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_centroids.h"
@@ -335,6 +336,31 @@ struct PyPowerDiagramZGrid {
         return res;
     }
 
+    PyDerResult<dim,TF> der_integrals_wrt_weight_and_positions( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+        auto buf_positions = positions.request();
+        auto buf_weights = weights.request();
+
+        auto ptr_positions = reinterpret_cast<const Pt *>( buf_positions.ptr );
+        auto ptr_weights = reinterpret_cast<const TF *>( buf_weights.ptr );
+
+        std::vector<std::size_t> w_m_offsets;
+        std::vector<std::size_t> w_m_columns;
+        std::vector<PD_TYPE    > w_m_values;
+        std::vector<PD_TYPE    > w_v_values;
+
+        PyDerResult<dim,TF> res;
+        find_radial_func( func, [&]( auto ft ) {
+            res.error = sdot::get_der_integrals_wrt_weight_and_positions( w_m_offsets, w_m_columns, w_m_values, w_v_values, grid, domain.bounds, ptr_positions, ptr_weights, std::size_t( positions.shape( 0 ) ), ft );
+        } );
+
+        vcp( res.m_offsets, w_m_offsets );
+        vcp( res.m_columns, w_m_columns );
+        vcp( res.m_values , w_m_values  );
+        vcp( res.v_values , w_v_values  );
+
+        return res;
+    }
+
     void display_vtk( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, const char *filename ) {
         //        sdot::VtkOutput<1,TF> vo({ "num" });
         //        grid.display( vo );
@@ -385,35 +411,36 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
 
     using DerResult = PyDerResult<PD_DIM,PD_TYPE>;
     pybind11::class_<DerResult>( m, "DerResult" )
-        .def_readwrite( "m_offsets"      , &DerResult::m_offsets                           , "" )
-        .def_readwrite( "m_columns"      , &DerResult::m_columns                           , "" )
-        .def_readwrite( "m_values"       , &DerResult::m_values                            , "" )
-        .def_readwrite( "v_values"       , &DerResult::v_values                            , "" )
-        .def_readwrite( "error"          , &DerResult::error                               , "" )
+        .def_readwrite( "m_offsets"                   , &DerResult::m_offsets                                      , "" )
+        .def_readwrite( "m_columns"                   , &DerResult::m_columns                                      , "" )
+        .def_readwrite( "m_values"                    , &DerResult::m_values                                       , "" )
+        .def_readwrite( "v_values"                    , &DerResult::v_values                                       , "" )
+        .def_readwrite( "error"                       , &DerResult::error                                          , "" )
     ;
 
     using ConvexPolyhedraAssembly = PyConvexPolyhedraAssembly<PD_DIM,PD_TYPE>;
     pybind11::class_<ConvexPolyhedraAssembly>( m, "ConvexPolyhedraAssembly" )
-        .def( pybind11::init<>()                                                           , "" )
-        .def( "add_convex_polyhedron"    , &ConvexPolyhedraAssembly::add_convex_polyhedron , "" )
-        .def( "add_box"                  , &ConvexPolyhedraAssembly::add_box               , "" )
-        .def( "normalize"                , &ConvexPolyhedraAssembly::normalize             , "" )
-        .def( "display_boundaries_vtk"   , &ConvexPolyhedraAssembly::display_boundaries_vtk, "" )
-        .def( "min_position"             , &ConvexPolyhedraAssembly::min_position          , "" )
-        .def( "max_position"             , &ConvexPolyhedraAssembly::max_position          , "" )
-        .def( "coeff_at"                 , &ConvexPolyhedraAssembly::coeff_at              , "" )
-        .def( "measure"                  , &ConvexPolyhedraAssembly::measure               , "" )
+        .def( pybind11::init<>()                                                                                   , "" )
+        .def( "add_convex_polyhedron"                 , &ConvexPolyhedraAssembly::add_convex_polyhedron            , "" )
+        .def( "add_box"                               , &ConvexPolyhedraAssembly::add_box                          , "" )
+        .def( "normalize"                             , &ConvexPolyhedraAssembly::normalize                        , "" )
+        .def( "display_boundaries_vtk"                , &ConvexPolyhedraAssembly::display_boundaries_vtk           , "" )
+        .def( "min_position"                          , &ConvexPolyhedraAssembly::min_position                     , "" )
+        .def( "max_position"                          , &ConvexPolyhedraAssembly::max_position                     , "" )
+        .def( "coeff_at"                              , &ConvexPolyhedraAssembly::coeff_at                         , "" )
+        .def( "measure"                               , &ConvexPolyhedraAssembly::measure                          , "" )
     ;
 
     using PowerDiagramZGrid = PyPowerDiagramZGrid<PD_DIM,PD_TYPE>;
     pybind11::class_<PowerDiagramZGrid>( m, "PowerDiagramZGrid" )
-        .def( pybind11::init<int>()                                                        , "" )
-        .def( "update"                   , &PowerDiagramZGrid::update                      , "" )
-        .def( "integrals"                , &PowerDiagramZGrid::integrals                   , "" )
-        .def( "der_integrals_wrt_weights", &PowerDiagramZGrid::der_integrals_wrt_weights   , "" )
-        .def( "centroids"                , &PowerDiagramZGrid::centroids                   , "" )
-        .def( "display_vtk"              , &PowerDiagramZGrid::display_vtk                 , "" )
-        .def( "display_vtk_points"       , &PowerDiagramZGrid::display_vtk_points          , "" )
+        .def( pybind11::init<int>()                                                                                , "" )
+        .def( "update"                                , &PowerDiagramZGrid::update                                 , "" )
+        .def( "integrals"                             , &PowerDiagramZGrid::integrals                              , "" )
+        .def( "der_integrals_wrt_weights"             , &PowerDiagramZGrid::der_integrals_wrt_weights              , "" )
+        .def( "der_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_integrals_wrt_weight_and_positions , "" )
+        .def( "centroids"                             , &PowerDiagramZGrid::centroids                              , "" )
+        .def( "display_vtk"                           , &PowerDiagramZGrid::display_vtk                            , "" )
+        .def( "display_vtk_points"                    , &PowerDiagramZGrid::display_vtk_points                     , "" )
     ;
 
     //    m.def( "display_asy"                  , &display_asy                   );

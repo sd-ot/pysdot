@@ -4,13 +4,13 @@ from setuptools import setup, find_packages, Extension
 import sys
 
 extra_compile_args = []
-if sys.platform == 'darwin':
+if 'darwin' in sys.platform:
     extra_compile_args.append("-std=c++14")
     extra_compile_args.append("-stdlib=libc++")
     extra_compile_args.append("-Wno-missing-braces")
     extra_compile_args.append("-march=native")
     extra_compile_args.append("-ffast-math")
-if sys.platform == 'linux':
+if 'linux' in sys.platform:
     extra_compile_args.append("-march=native")
     extra_compile_args.append("-ffast-math")
 
