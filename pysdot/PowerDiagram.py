@@ -46,9 +46,9 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
-    def der_integrals_wrt_weight_and_positions(self):
+    def der_centroids_and_integrals_wrt_weight_and_positions(self):
         inst = self.update_if_necessary()
-        return inst.der_integrals_wrt_weight_and_positions(
+        return inst.der_centroids_and_integrals_wrt_weight_and_positions(
             self.positions,
             self.weights,
             self.domain._inst,
