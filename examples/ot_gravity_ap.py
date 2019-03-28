@@ -23,7 +23,13 @@ def obj(x, ot, new_barycenters):
 def run(n, base_filename, l=0.5):
     # domain
     domain = ConvexPolyhedraAssembly()
-    domain.add_box([0, 0], [1, 1])
+    # domain.add_box([0, 0], [1, 1])
+    domain.add_convex_polyhedron([
+        [0, 0, -1, -0.2],
+        [0, 0, -0.2, -1],
+        [1, 1, +1, 0],
+        [1, 1, 0, +1],
+    ])
 
     # initial positions, weights and masses
     positions = []
@@ -60,7 +66,8 @@ def run(n, base_filename, l=0.5):
         b_o = ot.get_centroids()
 
         # trial for the new barycenters
-        velocity[:, 1] = - 0.05 * radius
+        velocity[:, 0] -= 0.05 * radius * 0.707
+        velocity[:, 1] -= 0.05 * radius * 0.707
         b_n = b_o + velocity
 
         # optimisation of positions to go to the target barycenters

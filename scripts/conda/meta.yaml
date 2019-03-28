@@ -3,7 +3,7 @@ package:
   version: 0.0.1
 
 source:
-  url: https://github.com/sd-ot/pysdot/archive/master.zip
+  git_url: https://github.com/sd-ot/pysdot.git
   # sha1: 958ae70baf186263a4bd801a81dd5d682aedd1db
 
 # test:

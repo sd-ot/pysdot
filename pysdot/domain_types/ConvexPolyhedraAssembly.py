@@ -42,12 +42,11 @@ class ConvexPolyhedraAssembly:
     # def sub_box(self, min_pos, max_pos, coeff=1.0, cut_id=-1):
     #     self.add_box( min_pos, max_pos, - coeff, cut_id )
 
-    # # remember to call normalize when integration( coeff ) != 1
-    # def add_convex_polyhedron( self, positions_and_normals, coeff=1.0, cut_id=-1 ):
-    #     pan = np.array( positions_and_normals, dtype=self._type )
-    #     if len( pan.shape ) == 1:
-    #         pan = pan.reshape( -1, 2 * self._dim )
-    #     self._inst.add_convex_polyhedron( pan, self._type( coeff ), np.uint64( cut_id ) )
+    # remember to call normalize when integration( coeff ) != 1
+    def add_convex_polyhedron(self, positions_and_normals, coeff=1.0, cut_id=-1):
+        pan = np.array(positions_and_normals, dtype=np.float64) # self._type
+        inst = self._update_inst([int(pan.shape[1]/2)])
+        inst.add_convex_polyhedron(pan, self._type(coeff), np.uint64(cut_id))
 
     # def normalize( self ):
     #     self._inst.normalize()
