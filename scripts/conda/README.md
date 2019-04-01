@@ -7,7 +7,7 @@ conda install anaconda anaconda-client conda-build
 
 conda build . --output --python=3.7
 anaconda login
-anaconda upload -u sdot xxx.tar.bz2
+anaconda upload --force -u sdot xxx.tar.bz2
 
 --------- installation
 

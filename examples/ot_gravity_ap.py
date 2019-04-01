@@ -25,6 +25,7 @@ def run(n, base_filename, l=0.5):
     domain = ConvexPolyhedraAssembly()
     # domain.add_box([0, 0], [1, 1])
     domain.add_convex_polyhedron([
+        # x y  Nx  Ny (ext)
         [0, 0, -1, -0.2],
         [0, 0, -0.2, -1],
         [1, 1, +1, 0],

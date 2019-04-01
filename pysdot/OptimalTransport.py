@@ -106,3 +106,9 @@ class OptimalTransport:
                 )
             self.solver_inst = mod.Solver()
         return self.solver_inst
+
+    def nb_diracs(self):
+        return self.pd.positions.shape[0]
+
+    def dim(self):
+        return self.pd.positions.shape[1]
