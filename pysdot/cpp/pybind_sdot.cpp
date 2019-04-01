@@ -361,7 +361,7 @@ struct PyPowerDiagramZGrid {
         return res;
     }
 
-    void display_vtk( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, const char *filename ) {
+    void display_vtk( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, const char *filename, bool points ) {
         //        sdot::VtkOutput<1,TF> vo({ "num" });
         //        grid.display( vo );
         //        vo.save( filename );
@@ -388,6 +388,11 @@ struct PyPowerDiagramZGrid {
                 ft.need_ball_cut()
             );
         } );
+
+        if ( points ) {
+            for( int n = 0; n < positions.shape( 0 ); ++n )
+                vtk_output.add_point( ptr_positions[ n ], { ptr_weights[ n ], TF( n ) } );
+        }
 
         vtk_output.save( filename );
     }

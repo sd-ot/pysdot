@@ -64,7 +64,7 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
-    def display_vtk(self, filename):
+    def display_vtk(self, filename, points=False):
         dn = os.path.dirname(filename)
         if len(dn):
             os.makedirs(dn, exist_ok=True)
@@ -74,7 +74,8 @@ class PowerDiagram:
             self.weights,
             self.domain._inst,
             self.radial_func.name(),
-            filename
+            filename,
+            points
         )
 
     def display_vtk_points(self, filename):

@@ -24,8 +24,8 @@ def update_positions_to_get_centroids(ot, b_obj):
     nb_diracs = ot.nb_diracs()
     dim = ot.dim()
 
-    ot.set_positions(b_obj)
-    for sub_iter in range(15):
+    #ot.set_positions(b_obj)
+    for sub_iter in range(50):
         mvs = ot.pd.der_centroids_and_integrals_wrt_weight_and_positions()
         m = csr_matrix((mvs.m_values, mvs.m_columns, mvs.m_offsets))
 
@@ -38,9 +38,9 @@ def update_positions_to_get_centroids(ot, b_obj):
         E = m[l1, :][:, l0]
         F = m[l1, :][:, l1]
 
-        print(np.linalg.cond(F.todense()))
+        # print(np.linalg.cond(F.todense()))
 
-        G = C + D * spsolve(F.tocsc(), E.tocsc())
+        G = C - D * spsolve(F.tocsc(), E.tocsc())
         b = np.array(b_obj.flat) - mvs.v_values[l0]
         # print(np.real(eigvals((np.transpose(G) * G).todense())))
         # print(np.linalg.cond((G*G).todense()))
@@ -57,16 +57,17 @@ def update_positions_to_get_centroids(ot, b_obj):
         # print(eig((np.transpose(H) * H).todense()))
         # pm(H)
         # break
-        p = 1e-5 * np.max(G)
+        p = 1e-2 * np.max(G)
         M = np.transpose(G) * G + p * diag(dim * nb_diracs)
-        V = b + p * np.ones(dim * nb_diracs)
+        V = np.transpose(G) * b # + p * np.ones(dim * nb_diracs)
 
         X = spsolve(M, V)
-        if np.linalg.norm(X) > 1e-2:
-            X *= 1e-2 / np.linalg.norm(X)
         print(sub_iter, np.linalg.norm(X))
+        m = 5e-2
+        if np.linalg.norm(X) > m:
+            X *= m / np.linalg.norm(X)
 
-        ot.set_positions(ot.get_positions() + X.reshape((-1, dim)))
+        ot.set_positions(ot.get_positions() + 0.8 * X.reshape((-1, dim)))
         ot.update_weights()
 
 
@@ -78,9 +79,9 @@ def run(n, base_filename, l=0.5):
     # initial positions, weights and masses
     positions = []
     if n == 1:
-        radius = 0.2
+        radius = 0.3
         mass = 3.14159 * radius**2
-        positions.append([radius, radius])
+        positions.append([0.5, radius])
     else:
         radius = l / (2 * (n - 1))
         mass = l**2 / n**2
@@ -100,14 +101,13 @@ def run(n, base_filename, l=0.5):
     ot.set_positions(positions)
     ot.update_weights()
 
-    ot.display_vtk(base_filename + "0.vtk")
-    ot.pd.display_vtk_points(base_filename + "pts_0.vtk")
+    ot.display_vtk(base_filename + "0.vtk", points=True)
 
     g = np.zeros((nb_diracs, dim))
-    g[:, 1] = -0.01
+    g[:, 1] = -0.001
 
     bh = [ot.get_centroids()]  # history of centroids
-    for num_iter in range(1):
+    for num_iter in range(50):
         bh.append(ot.get_centroids())
         print("num_iter", num_iter)
 
@@ -120,9 +120,9 @@ def run(n, base_filename, l=0.5):
 
         # display
         n1 = num_iter + 1
-        ot.display_vtk(base_filename + "{}.vtk".format(n1))
-        ot.pd.display_vtk_points(base_filename + "pts_{}.vtk".format(n1))
+        ot.display_vtk(base_filename + "{}.vtk".format(n1), points=True)
+        # ot.pd.display_vtk_points(base_filename + "pts_{}.vtk".format(n1))
 
 
 os.system("rm results/pd_*")
-run(10, "results/pd_")
+run(5, "results/pd_")

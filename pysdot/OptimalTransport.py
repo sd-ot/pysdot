@@ -41,8 +41,8 @@ class OptimalTransport:
     def get_centroids(self):
         return self.pd.centroids()
 
-    def display_vtk(self, filename):
-        self.pd.display_vtk(filename)
+    def display_vtk(self, filename, points=False):
+        self.pd.display_vtk(filename, points)
 
     def update_weights(self):
         if self.masses is None:
