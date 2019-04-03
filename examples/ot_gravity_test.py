@@ -20,29 +20,13 @@ def diag(n):
     return scipy.sparse.diags([np.ones(n)], [0])
 
 
-def update_positions(ot, bh, dt):
+def update_positions_to_get_centroids(ot, b_obj):
+    nb_diracs = ot.nb_diracs()
     dim = ot.dim()
 
-    X = None
-    os.system("rm results/sub_iter_*")
-    for sub_iter in range(10):
-        #
-        ot.coalesce_close_diracs(1e-5, bh)
-        nb_diracs = ot.nb_diracs()
-
-        ot.display_vtk("results/sub_iter_{}.vtk".format(sub_iter), points=True)
-        # print(ot.nb_diracs(),bh[-1].shape)
-
-        # g = np.zeros((nb_diracs, dim))
-        # g[:, 1] = -0.001
-
-        # get G
+    #ot.set_positions(b_obj)
+    for sub_iter in range(50):
         mvs = ot.pd.der_centroids_and_integrals_wrt_weight_and_positions()
-        if mvs.error:
-            ot.set_positions(ot.get_positions() - 0.5 * X.reshape((-1, dim)))
-            X *= 0.5
-            print("error")
-            continue
         m = csr_matrix((mvs.m_values, mvs.m_columns, mvs.m_offsets))
 
         rd = np.arange(dim * nb_diracs, dtype=np.int)
@@ -54,33 +38,37 @@ def update_positions(ot, bh, dt):
         E = m[l1, :][:, l0]
         F = m[l1, :][:, l1]
 
+        # print(np.linalg.cond(F.todense()))
+
         G = C - D * spsolve(F.tocsc(), E.tocsc())
-
-        # centroids
-        bm = np.array(bh[-2].flat)
-        b0 = np.array(bh[-1].flat)
-        b1 = mvs.v_values[l0]
-
-        db = b1 - np.array(ot.get_positions().flat)
-
-        # system to be solved
-        p = 1e-5 * np.max(G)
+        b = np.array(b_obj.flat) - mvs.v_values[l0]
+        # print(np.real(eigvals((np.transpose(G) * G).todense())))
+        # print(np.linalg.cond((G*G).todense()))
+        # print(ot.get_positions())
+        # print(ot.get_weights())
+        # pm(m)
+        # pm(C)
+        # pm(D)
+        # pm(E)
+        # pm(F)
+        # print(np.real(eigvals((np.transpose(G) * G).todense())))
+        # ly = np.arange(nb_diracs, dtype=np.int) * 2 + 1
+        # H = G[ly, :][:, ly]
+        # print(eig((np.transpose(H) * H).todense()))
+        # pm(H)
+        # break
+        p = 1e-2 * np.max(G)
         M = np.transpose(G) * G + p * diag(dim * nb_diracs)
-        V = np.transpose(G) * (2 * b0 - bm - b1) + p * db
+        V = np.transpose(G) * b # + p * np.ones(dim * nb_diracs)
 
-        # solve it
-        m = 5e-2
         X = spsolve(M, V)
-        n = np.linalg.norm(X)
-        print(sub_iter, n)
-        if n > m:
-            X *= m / n
+        print(sub_iter, np.linalg.norm(X))
+        m = 5e-2
+        if np.linalg.norm(X) > m:
+            X *= m / np.linalg.norm(X)
 
-        ot.set_positions(ot.get_positions() + 0.5 * X.reshape((-1, dim)))
+        ot.set_positions(ot.get_positions() + 0.8 * X.reshape((-1, dim)))
         ot.update_weights()
-
-        if n < 1e-5:
-            break
 
 
 def run(n, base_filename, l=0.5):
@@ -98,12 +86,13 @@ def run(n, base_filename, l=0.5):
         radius = l / (2 * (n - 1))
         mass = l**2 / n**2
         for y in np.linspace(radius, l - radius, n):
-            for x in np.linspace(0.5 - l / 2 + radius, 0.5 + l / 2 - radius, n):
-                nx = x + 0.5 * radius * (np.random.rand() - 0.5)
-                ny = y + radius / 10 + 0.5 * radius * (np.random.rand() - 0.5)
+            for x in np.linspace(radius, l - radius, n):
+                nx = x  # + 0.2 * radius * (np.random.rand() - 0.5)
+                ny = y  # + 0.2 * radius * (np.random.rand() - 0.5)
                 positions.append([nx, ny])
     positions = np.array(positions)
     nb_diracs = positions.shape[0]
+    dim = positions.shape[1]
 
     # OptimalTransport
     ot = OptimalTransport(domain, RadialFuncInBall())
@@ -114,21 +103,25 @@ def run(n, base_filename, l=0.5):
 
     ot.display_vtk(base_filename + "0.vtk", points=True)
 
-    # history of centroids
-    ce = ot.get_centroids()
-    ce[:, 1] += radius / 20
-    bh = [ce]
+    g = np.zeros((nb_diracs, dim))
+    g[:, 1] = -0.001
 
-    dt = 1.0
-    for num_iter in range(100):
+    bh = [ot.get_centroids()]  # history of centroids
+    for num_iter in range(50):
         bh.append(ot.get_centroids())
         print("num_iter", num_iter)
 
-        update_positions(ot, bh, dt)
+        # proposition for centroids
+        bn = 2 * bh[-1] - bh[-2] + g
+
+        # find a new set of diracs parameters (position and weight)
+        # to be as close to the new centroids as possible
+        update_positions_to_get_centroids(ot, bn)
 
         # display
         n1 = num_iter + 1
         ot.display_vtk(base_filename + "{}.vtk".format(n1), points=True)
+        # ot.pd.display_vtk_points(base_filename + "pts_{}.vtk".format(n1))
 
 
 os.system("rm results/pd_*")

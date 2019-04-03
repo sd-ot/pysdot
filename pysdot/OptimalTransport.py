@@ -6,6 +6,10 @@ import numpy as np
 import importlib
 
 
+def dist(a, b):
+    return np.linalg.norm(a - b, 2)
+
+
 class OptimalTransport:
     def __init__(self, domain, radial_func=RadialFuncUnit(),
                  obj_max_dw=1e-8, solver="Petsc"):
@@ -33,6 +37,9 @@ class OptimalTransport:
 
     def get_weights(self):
         return self.pd.weights
+
+    def get_masses(self):
+        return self.masses
 
     def set_masses(self, new_masses):
         self.masses_are_new = True
@@ -112,3 +119,36 @@ class OptimalTransport:
 
     def dim(self):
         return self.pd.positions.shape[1]
+
+    def coalesce_close_diracs(self, min_dist, lst=[]):
+        positions = self.get_positions()
+        weights = self.get_weights()
+        masses = self.masses
+
+        i = 0
+        has_change = False
+        while i < positions.shape[0]:
+            j = i + 1
+            while j < positions.shape[0]:
+                if dist(positions[i, :], positions[j, :]) < min_dist:
+                    print(i, j)
+                    masses[i] += masses[j]
+
+                    positions = np.delete(positions, (j), axis=0)
+                    weights = np.delete(weights, (j), axis=0)
+                    masses = np.delete(masses, (j), axis=0)
+                    print("elimination of ", j)
+                    has_change = True
+
+                    for k in range(len(lst)):
+                        lst[k][i] = 0.5 * (lst[k][i] + lst[k][j])
+                        lst[k] = np.delete(lst[k], (j), axis=0)
+                else:
+                    j += 1
+            i += 1
+
+        if has_change:
+            self.set_positions(positions)
+            self.set_weights(weights)
+            self.set_masses(masses)
+
