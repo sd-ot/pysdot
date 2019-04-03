@@ -51,7 +51,7 @@ class OptimalTransport:
     def display_vtk(self, filename, points=False):
         self.pd.display_vtk(filename, points)
 
-    def update_weights(self):
+    def update_weights(self, ret_if_err=False):
         if self.masses is None:
             N = self.pd.positions.shape[0]
             self.masses = self.pd.domain.measure() / N * np.ones(N)
@@ -69,6 +69,8 @@ class OptimalTransport:
                 self.pd.set_weights(
                     (1 - ratio) * old_weights + ratio * self.pd.weights
                 )
+                if ret_if_err:
+                    return True
                 print("bim (going back)")
                 continue
             old_weights = self.pd.weights
@@ -100,6 +102,8 @@ class OptimalTransport:
 
             if nx < self.obj_max_dw:
                 break
+                
+        return False
 
     def get_solver(self):
         if self.solver_inst is None:

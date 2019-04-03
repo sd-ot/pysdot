@@ -21,13 +21,27 @@ def diag(n):
 
 
 def update_positions(ot, bh, dt):
+    """
+    Pb: la determination des poids n'est pas assez solide.
+    """
     dim = ot.dim()
 
-    X = None
+    ratio = 1.0
+    last_change = 0
+    old_X = ot.get_positions() + 0.0
+    old_w = ot.get_weights() + 0.0
     os.system("rm results/sub_iter_*")
-    for sub_iter in range(10):
+    for sub_iter in range(100):
+        if sub_iter == last_change + 300 / ratio:
+            last_change = sub_iter
+            ot.set_positions(old_X)
+            ot.set_weights(old_w)
+            ratio *= 0.5
+            print("c", ratio)
+            continue
+
         #
-        ot.coalesce_close_diracs(1e-5, bh)
+        # ot.coalesce_close_diracs(1e-5, bh)
         nb_diracs = ot.nb_diracs()
 
         ot.display_vtk("results/sub_iter_{}.vtk".format(sub_iter), points=True)
@@ -39,9 +53,11 @@ def update_positions(ot, bh, dt):
         # get G
         mvs = ot.pd.der_centroids_and_integrals_wrt_weight_and_positions()
         if mvs.error:
-            ot.set_positions(ot.get_positions() - 0.5 * X.reshape((-1, dim)))
-            X *= 0.5
-            print("error")
+            last_change = sub_iter
+            ot.set_positions(old_X)
+            ot.set_weights(old_w)
+            ratio *= 0.5
+            print("r", ratio)
             continue
         m = csr_matrix((mvs.m_values, mvs.m_columns, mvs.m_offsets))
 
@@ -61,12 +77,12 @@ def update_positions(ot, bh, dt):
         b0 = np.array(bh[-1].flat)
         b1 = mvs.v_values[l0]
 
-        db = b1 - np.array(ot.get_positions().flat)
+        # db = b1 - np.array(ot.get_positions().flat)
 
         # system to be solved
         p = 1e-5 * np.max(G)
         M = np.transpose(G) * G + p * diag(dim * nb_diracs)
-        V = np.transpose(G) * (2 * b0 - bm - b1) + p * db
+        V = np.transpose(G) * (2 * b0 - bm - b1) # + p * db
 
         # solve it
         m = 5e-2
@@ -76,8 +92,14 @@ def update_positions(ot, bh, dt):
         if n > m:
             X *= m / n
 
-        ot.set_positions(ot.get_positions() + 0.5 * X.reshape((-1, dim)))
-        ot.update_weights()
+        ot.set_positions(ot.get_positions() + ratio * X.reshape((-1, dim)))
+        if ot.update_weights(True):
+            last_change = sub_iter
+            ot.set_positions(old_X)
+            ot.set_weights(old_w)
+            ratio *= 0.5
+            print("s", ratio)
+            continue
 
         if n < 1e-5:
             break
@@ -100,7 +122,7 @@ def run(n, base_filename, l=0.5):
         for y in np.linspace(radius, l - radius, n):
             for x in np.linspace(0.5 - l / 2 + radius, 0.5 + l / 2 - radius, n):
                 nx = x + 0.5 * radius * (np.random.rand() - 0.5)
-                ny = y + radius / 10 + 0.5 * radius * (np.random.rand() - 0.5)
+                ny = y + radius + 0.5 * radius * (np.random.rand() - 0.5)
                 positions.append([nx, ny])
     positions = np.array(positions)
     nb_diracs = positions.shape[0]
@@ -116,20 +138,20 @@ def run(n, base_filename, l=0.5):
 
     # history of centroids
     ce = ot.get_centroids()
-    ce[:, 1] += radius / 20
+    ce[:, 1] += radius / 10
     bh = [ce]
 
     dt = 1.0
-    for num_iter in range(100):
+    for num_iter in range(500):
         bh.append(ot.get_centroids())
         print("num_iter", num_iter)
 
         update_positions(ot, bh, dt)
 
         # display
-        n1 = num_iter + 1
+        n1 = int(num_iter / 1) + 1
         ot.display_vtk(base_filename + "{}.vtk".format(n1), points=True)
 
 
 os.system("rm results/pd_*")
-run(5, "results/pd_")
+run(15, "results/pd_")
