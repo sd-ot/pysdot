@@ -7,6 +7,7 @@ from scipy.sparse import csr_matrix
 from scipy.linalg import eigvals
 from scipy.linalg import eig
 import matplotlib.pyplot as plt
+import scipy.optimize
 import numpy as np
 import scipy
 import os
@@ -16,93 +17,61 @@ def pm(G):
     print(np.array2string(G.todense(), 5000))
 
 
-def diag(n):
-    return scipy.sparse.diags([np.ones(n)], [0])
+def obj(cx, ot, bh, dt):
+    pc = cx.reshape((-1, 2))
+    ot.set_positions(pc)
+
+    bm = np.array(bh[-2].flat)
+    b0 = np.array(bh[-1].flat)
+    bc = np.array(ot.get_centroids().flat)
+    bt = 2 * b0 - bm
+
+    dlt = bc - bt
+    dlp = cx - bt
+    return 0.5 * np.sum(dlt**2) \
+        + 0.5 * 1e-2 * np.sum(dlp**2)
 
 
-def update_positions(ot, bh, dt):
-    """
-    Pb: la determination des poids n'est pas assez solide.
-    """
+def jac(cx, ot, bh, dt):
+    nb_diracs = ot.nb_diracs()
     dim = ot.dim()
 
-    ratio = 1.0
-    last_change = 0
-    old_X = ot.get_positions() + 0.0
-    old_w = ot.get_weights() + 0.0
-    os.system("rm results/sub_iter_*")
-    for sub_iter in range(100):
-        if sub_iter == last_change + 300 / ratio:
-            last_change = sub_iter
-            ot.set_positions(old_X)
-            ot.set_weights(old_w)
-            ratio *= 0.5
-            print("c", ratio)
-            continue
+    # get G
+    mvs = ot.pd.der_centroids_and_integrals_wrt_weight_and_positions()
+    m = csr_matrix((mvs.m_values, mvs.m_columns, mvs.m_offsets))
 
-        #
-        # ot.coalesce_close_diracs(1e-5, bh)
-        nb_diracs = ot.nb_diracs()
+    rd = np.arange(dim * nb_diracs, dtype=np.int)
+    b0 = (dim + 1) * np.floor_divide(rd, dim)
+    l0 = b0 + rd % dim
+    C = m[l0, :][:, l0]
 
-        ot.display_vtk("results/sub_iter_{}.vtk".format(sub_iter), points=True)
-        # print(ot.nb_diracs(),bh[-1].shape)
+    # centroids
+    pc = cx.reshape((-1, 2))
+    ot.set_positions(pc)
 
-        # g = np.zeros((nb_diracs, dim))
-        # g[:, 1] = -0.001
+    bm = np.array(bh[-2].flat)
+    b0 = np.array(bh[-1].flat)
+    bc = np.array(ot.get_centroids().flat)
+    bt = 2 * b0 - bm
 
-        # get G
-        mvs = ot.pd.der_centroids_and_integrals_wrt_weight_and_positions()
-        if mvs.error:
-            last_change = sub_iter
-            ot.set_positions(old_X)
-            ot.set_weights(old_w)
-            ratio *= 0.5
-            print("r", ratio)
-            continue
-        m = csr_matrix((mvs.m_values, mvs.m_columns, mvs.m_offsets))
+    dlt = bc - bt
+    dlp = cx - bt
+    return C * (dlt + 1e-2 * dlp)
 
-        rd = np.arange(dim * nb_diracs, dtype=np.int)
-        b0 = (dim + 1) * np.floor_divide(rd, dim)
-        l0 = b0 + rd % dim
-        l1 = (dim + 1) * np.arange(nb_diracs, dtype=np.int) + dim
-        C = m[l0, :][:, l0]
-        D = m[l0, :][:, l1]
-        E = m[l1, :][:, l0]
-        F = m[l1, :][:, l1]
 
-        G = C - D * spsolve(F.tocsc(), E.tocsc())
+def fit_positions(ot, bh, dt):
+    ropt = scipy.optimize.minimize(
+        obj,
+        ot.get_positions().flatten(),
+        (ot, bh, dt),
+        tol=1e-6,
+        method='BFGS',
+        jac=jac
+    )
+    print(ropt.message)
 
-        # centroids
-        bm = np.array(bh[-2].flat)
-        b0 = np.array(bh[-1].flat)
-        b1 = mvs.v_values[l0]
-
-        # db = b1 - np.array(ot.get_positions().flat)
-
-        # system to be solved
-        p = 1e-5 * np.max(G)
-        M = np.transpose(G) * G + p * diag(dim * nb_diracs)
-        V = np.transpose(G) * (2 * b0 - bm - b1) # + p * db
-
-        # solve it
-        m = 5e-2
-        X = spsolve(M, V)
-        n = np.linalg.norm(X)
-        print(sub_iter, n)
-        if n > m:
-            X *= m / n
-
-        ot.set_positions(ot.get_positions() + ratio * X.reshape((-1, dim)))
-        if ot.update_weights(True):
-            last_change = sub_iter
-            ot.set_positions(old_X)
-            ot.set_weights(old_w)
-            ratio *= 0.5
-            print("s", ratio)
-            continue
-
-        if n < 1e-5:
-            break
+    positions = ropt.x.reshape((-1, 2))
+    ot.set_positions(positions)
 
 
 def run(n, base_filename, l=0.5):
@@ -143,10 +112,11 @@ def run(n, base_filename, l=0.5):
 
     dt = 1.0
     for num_iter in range(500):
-        bh.append(ot.get_centroids())
         print("num_iter", num_iter)
 
-        update_positions(ot, bh, dt)
+        bh.append(ot.get_centroids())
+        fit_positions(ot, bh, dt)
+        ot.update_weights()
 
         # display
         n1 = int(num_iter / 1) + 1
