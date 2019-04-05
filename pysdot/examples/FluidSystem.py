@@ -3,9 +3,12 @@ from pysdot import OptimalTransport
 
 from scipy.sparse.linalg import spsolve
 from scipy.sparse import csr_matrix
+from scipy.linalg import eigvals
 import numpy as np
 import scipy
+import sys
 
+import matplotlib.pyplot as plt
 
 class FluidSystem:
     def __init__(self, domain, positions, velocities, masses, base_filename):
@@ -25,6 +28,47 @@ class FluidSystem:
         fn = "{}{}.vtk".format(self.base_filename, self.cpt_display)
         self.ot.display_vtk(fn, points=True)
         self.cpt_display += 1
+
+    def make_step(self, dt=1.0):
+        # target centroid positions + initial guess for the dirac positions
+        adv = dt * self.velocities
+        target_centroids = self.centroids + adv
+        self.ot.set_positions(self.ot.get_positions() + adv)
+
+        # stuff to extract centroids, masses, ...
+        d = self.ot.dim()
+        n = self.ot.nb_diracs()
+        rd = np.arange(d * n, dtype=np.int)
+        b0 = (d + 1) * np.floor_divide(rd, d)
+        l0 = b0 + rd % d
+        l1 = (d + 1) * np.arange(n, dtype=np.int) + d
+
+        # find weights and positions to fit the target centroid positions
+        for _ in range(1):
+            # search dir
+            mvs = self.ot.pd.der_centroids_and_integrals_wrt_weight_and_positions()
+            if mvs.error:
+                sys.exit(1)
+
+            M = csr_matrix((mvs.m_values, mvs.m_columns, mvs.m_offsets))
+            # print("m",np.min(np.real(eigvals(M.todense()))))
+
+            V = mvs.v_values
+            V[l0] -= target_centroids.flatten()
+            V[l1] -= self.ot.get_masses()
+
+            X = spsolve(M, V)
+
+            v = []
+            for l in np.linspace(0,2,100):
+                v.append(np.sum(self.ot.get_centroids()-target_centroids))
+
+            self.ot.set_positions(self.ot.get_positions() - X[l0].reshape((-1,d)))
+            self.ot.set_weights(self.ot.get_weights() - X[l1])
+            e = np.linalg.norm(X)
+            if e < 1e-5:
+                break
+
 
 
 # def obj(cx, ot, bh, dt):
@@ -48,9 +92,6 @@ class FluidSystem:
 #     dim = ot.dim()
 
 #     # get G
-#     mvs = ot.pd.der_centroids_and_integrals_wrt_weight_and_positions()
-#     # if mvs.error:
-#     m = csr_matrix((mvs.m_values, mvs.m_columns, mvs.m_offsets))
 
 #     rd = np.arange(dim * nb_diracs, dtype=np.int)
 #     b0 = (dim + 1) * np.floor_divide(rd, dim)

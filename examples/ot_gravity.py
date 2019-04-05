@@ -28,12 +28,11 @@ def run(n, base_filename, l=0.5):
     fs = FluidSystem(domain, positions, velocities, masses, base_filename)
     fs.display()
 
-    # for num_iter in range(10):
-    #     print(num_iter)
+    for num_iter in range(1):
+        print(num_iter)
 
-    #     s.get_new_positions_for_centroids()
-    #     s.get_new_weights_for_areas()
-    #     s.display()
+        fs.make_step()
+        fs.display()
 
 #
-run(10, "results/pd_")
+run(2, "results/pd_")
