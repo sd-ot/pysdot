@@ -68,7 +68,7 @@ def update_positions_to_get_centroids(ot, b_obj):
             X *= m / np.linalg.norm(X)
 
         ot.set_positions(ot.get_positions() + 0.8 * X.reshape((-1, dim)))
-        ot.update_weights()
+        ot.adjust_weights()
 
 
 def run(n, base_filename, l=0.5):
@@ -99,7 +99,7 @@ def run(n, base_filename, l=0.5):
     ot.set_weights(np.ones(nb_diracs) * radius**2)
     ot.set_masses(np.ones(nb_diracs) * mass)
     ot.set_positions(positions)
-    ot.update_weights()
+    ot.adjust_weights()
 
     ot.display_vtk(base_filename + "0.vtk", points=True)
 

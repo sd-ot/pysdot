@@ -2,8 +2,6 @@ import numpy as np
 import skfmm
 import math
 
-# import matplotlib.pyplot
-
 class GradGrid:
     def __init__( self, domain, targets, space_step ):
         self.mi = domain.min_position() - space_step

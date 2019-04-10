@@ -28,7 +28,7 @@ class FluidSystem:
         self.time = 0
 
         # initial centroid positions and velocities
-        self.ot.update_weights()
+        self.ot.adjust_weights()
         self.centroids = self.ot.get_centroids()
         self.velocities = np.array(velocities)
         self.coeff_centroid_force = 1e-4
@@ -101,7 +101,7 @@ class FluidSystem:
 
         # projection
         # self.ot.verbosity = 1
-        self.ot.update_weights( relax=0.75 )
+        self.ot.adjust_weights( relax=0.75 )
 
         # update centroid pos and speed
         self.time += dt

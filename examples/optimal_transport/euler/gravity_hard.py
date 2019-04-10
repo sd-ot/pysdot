@@ -23,7 +23,7 @@ def run(n, base_filename):
     ot.set_positions(np.array(positions))
     b_old = ot.pd.centroids()
 
-    ot.update_weights()
+    ot.adjust_weights()
     ot.display_vtk(base_filename + "0.vtk")
 
     nb_timesteps = int(20 / radius)
@@ -38,7 +38,7 @@ def run(n, base_filename):
         p_tst = p_old + dt * v
 
         ot.set_positions(p_tst)
-        ot.update_weights()
+        ot.adjust_weights()
 
         # display
         d = int(n / 5)

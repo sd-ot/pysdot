@@ -21,7 +21,7 @@ class TestOptimalTransport(unittest.TestCase):
             ot.set_weights(np.ones(nb_diracs))
 
             # optimal weights
-            ot.update_weights()
+            ot.adjust_weights()
 
             # integrals
             areas = ot.pd.integrals()
@@ -46,7 +46,7 @@ class TestOptimalTransport(unittest.TestCase):
             ot.set_masses(np.ones(nb_diracs) * mass)
 
             # optimal weights
-            ot.update_weights()
+            ot.adjust_weights()
 
             # integrals
             areas = ot.pd.integrals()

@@ -45,15 +45,16 @@ class ConvexPolyhedraAssembly:
     # remember to call normalize when integration( coeff ) != 1
     def add_convex_polyhedron(self, positions_and_normals, coeff=1.0, cut_id=-1):
         pan = np.array(positions_and_normals, dtype=np.float64) # self._type
+        print(pan.shape)
         inst = self._update_inst([int(pan.shape[1]/2)])
         inst.add_convex_polyhedron(pan, self._type(coeff), np.uint64(cut_id))
 
     # def normalize( self ):
     #     self._inst.normalize()
 
-    # def display_boundaries_vtk( self, filename ):
-    #     os.makedirs( os.path.dirname( filename ), exist_ok = True )
-    #     self._inst.display_boundaries_vtk( filename )
+    def display_boundaries_vtk( self, filename ):
+        os.makedirs( os.path.dirname( filename ), exist_ok = True )
+        self._inst.display_boundaries_vtk( filename )
 
     # # coefficient at `point`. If point is not contained, return 0.
     # def coeff_at( self, point ):

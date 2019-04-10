@@ -1,5 +1,6 @@
-import py_power_diagram_test_context
-import py_power_diagram as pd
+from pysdot.domain_types import ConvexPolyhedraAssembly
+from pysdot.radial_funcs import RadialFuncInBall
+from pysdot import OptimalTransport
 import numpy as np
 
 # constants
@@ -20,36 +21,36 @@ for n in [ 160 ]: # 20, 40, 80,
     mass = 0.25 * rho0 * np.pi * 4 / N
     target_radius = ( mass / np.pi )**0.5
 
-    cp = [
-         0, 0, +1, -1,
-         9, 9,  0, +1,
-        -9, 9, -1, -1,
-    ]
-
     # iterations
     weights = np.ones( positions.shape[ 0 ] ) * target_radius**2
 
-    domain = pd.domain_types.ConvexPolyhedraAssembly()
-    domain.add_convex_polyhedron( cp, 1 / mass )
+    domain = ConvexPolyhedraAssembly()
+    domain.add_convex_polyhedron([
+        [  0, 0, +1, -1 ],
+        [  9, 9,  0, +1 ],
+        [ -9, 9, -1, -1 ],
+    ])
     domain.display_boundaries_vtk( directory + "/bounds.vtk" )
 
     color_values = 0.5 * np.linalg.norm( positions, axis=1, keepdims=True, ord=2 )
     color_values = ( color_values - np.min( color_values ) ) / ( np.max( color_values ) - np.min( color_values ) )
 
+    ot = OptimalTransport(domain, RadialFuncInBall())
     nb_timesteps = int( 3 / target_radius )
     for i in range( nb_timesteps ):
         # change positions
         positions -= 0.4 * target_radius / np.linalg.norm( positions, axis=1, keepdims=True, ord=2 ) * positions
+        ot.set_positions(positions)
 
         # optimal weights
-        weights = pd.optimal_transport_2( "in_ball(weight**0.5)", positions, weights, domain )
+        ot.adjust_weights()
 
         # display
         d = int( n / 5 )
         if i % d == 0:
-            pd.display_asy( directory + "/pd_{:03}.asy".format( int( i / d ) ), "in_ball(weight**0.5)", positions, weights, domain, values = color_values, linewidth=0.002 )
-            pd.display_vtk( directory + "/pd_{:03}.vtk".format( int( i / d ) ), "in_ball(weight**0.5)", positions, weights, domain )
+            # ot.display_asy( directory + "/pd_{:03}.asy".format( int( i / d ) ), "in_ball(weight**0.5)", positions, weights, domain, values = color_values, linewidth=0.002 )
+            ot.display_vtk( directory + "/pd_{:03}.vtk".format( int( i / d ) ) )
     
         # update positions
-        positions = pd.get_centroids( "in_ball(weight**0.5)", positions, weights, domain )
+        positions = ot.get_centroids()
 

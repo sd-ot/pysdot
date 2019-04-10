@@ -11,7 +11,7 @@ def obj(x, ot, new_barycenters):
     # ot.set_weights(ot.get_weights()*0 + 1e-3)
     pos = x.reshape((-1, 2))
     ot.set_positions(pos)
-    ot.update_weights()
+    ot.adjust_weights()
 
     prp = ot.get_centroids()
     dlt = new_barycenters - prp
@@ -51,7 +51,7 @@ def run(n, base_filename, l=0.5):
     ot.set_weights(np.ones(nb_diracs) * radius**2)
     ot.set_masses(np.ones(nb_diracs) * l**2 / nb_diracs)
     ot.set_positions(positions)
-    ot.update_weights()
+    ot.adjust_weights()
 
     ot.display_vtk(base_filename + "0.vtk")
 
@@ -63,7 +63,7 @@ def run(n, base_filename, l=0.5):
         print( "num_iter", num_iter)
 
         # barycenters at the beginning
-        ot.update_weights()
+        ot.adjust_weights()
         b_o = ot.get_centroids()
 
         # trial for the new barycenters
@@ -83,7 +83,7 @@ def run(n, base_filename, l=0.5):
 
         positions = ropt.x.reshape((-1, 2))
         ot.set_positions(positions)
-        ot.update_weights()
+        ot.adjust_weights()
 
         # new barycenters, corrected (minimize have update the weights)
         b_n = ot.get_centroids()

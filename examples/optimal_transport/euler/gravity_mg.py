@@ -37,7 +37,7 @@ def run( n, base_filename, l=0.5 ):
     ot.set_positions( positions )
     ot.max_iter = 100
 
-    ot.update_weights()
+    ot.adjust_weights()
     ot.display_vtk( base_filename + "0.vtk", points=True, centroids=True )
 
     # gravity
@@ -67,7 +67,7 @@ def run( n, base_filename, l=0.5 ):
             dt *= 0.5
 
         ot.set_positions( X )
-        ot.update_weights()
+        ot.adjust_weights()
 
         # display
         n1 = int( num_iter / 1 ) + 1

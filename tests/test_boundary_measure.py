@@ -23,7 +23,7 @@ def test_discr( ot, n, coeff_r, cpt ):
     ot.set_masses( np.array( masses ) )
     ot.max_iter = 100
 
-    ot.update_weights( relax=0.5 )
+    ot.adjust_weights( relax=0.5 )
 
     ot.display_vtk( "lc_{}.vtk".format( cpt ) )
 

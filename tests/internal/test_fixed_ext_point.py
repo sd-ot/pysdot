@@ -15,7 +15,7 @@ ot.set_weights( np.array( [ R**2 ] ) )
 cpt = 0
 for y in np.linspace( 0, -20, 100 ):
     ot.set_positions( np.array( [ [ 0.5, y ] ] ) )
-    ot.update_weights()
+    ot.adjust_weights()
 
     r = ot.get_weights()[ 0 ] ** 0.5
     a = np.arcsin( R / r )
