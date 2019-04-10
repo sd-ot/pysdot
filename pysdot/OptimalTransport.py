@@ -20,7 +20,7 @@ class OptimalTransport:
         self.masses = None
 
         self.verbosity = 0
-        self.max_iter = 10
+        self.max_iter = 1000
         self.delta_w = []
         self.solver = solver
 
@@ -48,10 +48,10 @@ class OptimalTransport:
     def get_centroids(self):
         return self.pd.centroids()
 
-    def display_vtk(self, filename, points=False):
-        self.pd.display_vtk(filename, points)
+    def display_vtk(self, filename, points=False, centroids=False):
+        self.pd.display_vtk(filename, points, centroids)
 
-    def update_weights(self, ret_if_err=False):
+    def update_weights(self, ret_if_err=False, relax=1.0):
         if self.masses is None:
             N = self.pd.positions.shape[0]
             self.masses = self.pd.domain.measure() / N * np.ones(N)
@@ -94,7 +94,7 @@ class OptimalTransport:
             x = solver.solve(A, b)
 
             # update weights
-            self.pd.set_weights(self.pd.weights - x)
+            self.pd.set_weights(self.pd.weights - relax * x)
 
             nx = np.max(np.abs(x))
             if self.verbosity:

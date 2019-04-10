@@ -7,6 +7,7 @@ from scipy.sparse import csr_matrix
 from scipy.linalg import eigvals
 from scipy.linalg import eig
 import matplotlib.pyplot as plt
+import numdifftools as nd
 import scipy.optimize
 import numpy as np
 import scipy
@@ -19,8 +20,6 @@ def pm( G ):
 
 def obj( cx, ot, bh, dt ):
     op = ot.get_positions() + 0.0
-    ow = ot.get_weights() + 0.0
-
     pc = cx.reshape( ( -1, 2 ) )
     ot.set_positions( pc )
     ot.update_weights()
@@ -30,59 +29,28 @@ def obj( cx, ot, bh, dt ):
     bc = np.array( ot.get_centroids().flat )
     bt = 2 * b0 - bm
 
-    ot.set_positions( op )
-    ot.set_weights( ow )
-
     dlt = bc - bt
+    ot.set_positions( op )
     return 0.5 * np.sum( dlt ** 2 )
 
 
 def fit_positions( ot, bh, dt ):
-    nb_diracs = ot.nb_diracs()
-    dim = ot.dim()
-
-    n = nb_diracs * dim
-    X = np.array( ot.get_positions().flat )
     for num_iter in range( 1000 ):
-        # gradient
-        eps = 1e-7
-        D = np.zeros( n )
-        ref_err = obj( X, ot, bh, dt )
-        for r in range( n ):
-            Y = X + 0.0
-            Y[ r ] += eps
-            new_err = obj( Y, ot, bh, dt )
-            D[ r ] = ( new_err - ref_err ) / eps
+        X = np.array( ot.get_positions().flat )
+        fun = lambda cx: obj( cx, ot, bh, dt )
+        g = nd.Gradient( fun, 1e-6 )
+        h = nd.Hessian( fun, 1e-6 )
+        M = np.array( h( X ) )
+        V = np.array( g( X ) )
 
-        # lambda
-        norm = np.linalg.norm( D, ord=np.inf )
-        if norm > 1e-2:
-            D *= 1e-2 / norm
-        best_l = 0
-        best_err = 1e40
-        for l in np.linspace( 0.0, 1.0, 10 ):
-            err = obj( X - l * D, ot, bh, dt )
-            if best_err > err:
-                best_err = err
-                best_l = l
-        for l in np.linspace( best_l - 0.1, best_l + 0.1, 20 ):
-            err = obj( X - l * D, ot, bh, dt )
-            if best_err > err:
-                best_err = err
-                best_l = l
+        d = np.linalg.solve( M, V )
+        norm = np.linalg.norm( d, ord=np.inf )
+        if norm > 1e-4:
+            d *= 1e-4 / norm
+        print( "  num_iter:", num_iter, "norm:", norm )
 
-        #
-        print( "  ", num_iter, best_l, norm, best_l * np.linalg.norm( D ), "err:", best_err )
-        if best_l == 0:
-            print( "  => bim" )
-            break
-        X -= best_l * D
-
-        ot.set_positions( X.reshape( ( -1, 2 ) ) )
+        ot.set_positions( ot.get_positions() - d.reshape( ( -1, 2 ) ) )
         ot.update_weights()
-
-        if best_err < 1e-7:
-            break
 
 
     # # get G
@@ -167,7 +135,7 @@ def run( n, base_filename, l=0.5 ):
         for y in np.linspace( radius, l - radius, n ):
             for x in np.linspace( 0.5 - l / 2 + radius, 0.5 + l / 2 - radius, n ):
                 nx = x + 0.0 * radius * ( np.random.rand() - 0.5 )
-                ny = y + 0.0 * radius * ( np.random.rand() - 0.5 ) + 0.5 * radius
+                ny = y + 0.0 * radius * ( np.random.rand() - 0.5 )
                 positions.append([nx, ny])
     positions = np.array(positions)
     nb_diracs = positions.shape[ 0 ]
@@ -178,7 +146,7 @@ def run( n, base_filename, l=0.5 ):
     ot.set_weights( np.ones( nb_diracs ) * radius**2 )
     ot.set_masses( np.ones( nb_diracs ) * mass )
     ot.set_positions( positions )
-    ot.max_iter = 100
+    ot.max_iter = 500
     ot.update_weights()
 
     ot.display_vtk( base_filename + "0.vtk", points=True, centroids=True )
@@ -189,7 +157,7 @@ def run( n, base_filename, l=0.5 ):
     bh = [ce]
 
     dt = 1.0
-    for num_iter in range( 100 ):
+    for num_iter in range( 15 ):
         print( "num_iter", num_iter )
 
         bh.append( ot.get_centroids() )
@@ -200,5 +168,5 @@ def run( n, base_filename, l=0.5 ):
         ot.display_vtk( base_filename + "{}.vtk".format( n1 ), points=True, centroids=True )
 
 
-os.system( "rm results/pd_*" )
-run( 10, "results/pd_" )
+os.system( "rm results/hd_*" )
+run( 3, "results/hd_" )

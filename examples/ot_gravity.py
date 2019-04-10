@@ -4,35 +4,36 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+import matplotlib.pyplot as plt
 
 def run(n, base_filename, l=0.5):
     os.system("rm {}*.vtk".format(base_filename))
 
     # initial conditions
     domain = ConvexPolyhedraAssembly()
-    domain.add_box([0, 0], [1, 1])
+    domain.add_box( [ 0, 0 ], [ 1, 1 ] )
 
     positions = []
     velocities = []
     radius = 0.5 * l / n
-    masses = np.ones(n**2) * l**2 / n**2
-    for y in np.linspace(radius, l - radius, n):
-        for x in np.linspace(0.5 - l / 2 + radius, 0.5 + l / 2 - radius, n):
-            nx = x + 0 * radius * (np.random.rand() - 0.5)
-            ny = y + 0 * radius * (np.random.rand() - 0.5)
-            velocities.append([0, -radius/5])
-            positions.append([nx, ny])
+    for y in np.linspace( radius, l - radius, n ):
+        for x in np.linspace( 0.5 - l / 2 + radius, 0.5 + l / 2 - radius, n ):
+            nx = x + 0 * radius * ( np.random.rand() - 0.5 )
+            ny = y + 0 * radius + 0 * radius * ( np.random.rand() - 0.5 )
+            if ( nx - 0.5 )**2 + ( ny - 0.5 * l )**2 < ( 0.5 * l )**2:
+                velocities.append( [ 0, -radius/5 ] )
+                positions.append( [ nx, ny ] )
+    masses = np.ones( len( positions ) ) * l**2 / n**2
 
-
-    #   
-    fs = FluidSystem(domain, positions, velocities, masses, base_filename)
+    # simulation
+    fs = FluidSystem( domain, positions, velocities, masses, base_filename )
+    fs.coeff_centroid_force = 1e-5
     fs.display()
 
-    for num_iter in range(1):
-        print(num_iter)
-
+    for num_iter in range( 500 ):
+        print( "num_iter:", num_iter, "time:", fs.time )
         fs.make_step()
         fs.display()
 
 #
-run(2, "results/pd_")
+run(20, "results/pd_")

@@ -12,3 +12,5 @@ __pycache__
 *.egg
 dist/
 *.vtk
+*.png
+*.log

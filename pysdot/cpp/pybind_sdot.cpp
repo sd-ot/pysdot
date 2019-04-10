@@ -10,6 +10,8 @@
 
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_centroids_and_integrals_wrt_weight_and_positions.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_integrals_wrt_weights.h"
+#include "../../ext/sdot/src/sdot/PowerDiagram/get_der_boundary_integral.h"
+#include "../../ext/sdot/src/sdot/PowerDiagram/get_boundary_integral.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_integrals.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_centroids.h"
 
@@ -307,6 +309,25 @@ struct PyPowerDiagramZGrid {
         return get_integrals( positions, weights, domain.bounds, grid, func );
     }
 
+    PD_TYPE boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+        PD_TYPE res = 0;
+        find_radial_func( func, [&]( auto ft ) {
+            res = get_boundary_integral( grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
+        } );
+        return res;
+    }
+
+    pybind11::array_t<PD_TYPE> der_boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+        pybind11::array_t<PD_TYPE> res;
+        res.resize( { positions.shape( 0 ), positions.shape( 1 ) } );
+
+        find_radial_func( func, [&]( auto ft ) {
+            get_der_boundary_integral( reinterpret_cast<Pt *>( res.mutable_data() ), grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
+        } );
+
+        return res;
+    }
+
     pybind11::array_t<PD_TYPE> centroids( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
         return get_centroids( positions, weights, domain.bounds, grid, func );
     }
@@ -361,11 +382,11 @@ struct PyPowerDiagramZGrid {
         return res;
     }
 
-    void display_vtk( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, const char *filename, bool points ) {
+    void display_vtk( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, const char *filename, bool points, bool centroids ) {
         //        sdot::VtkOutput<1,TF> vo({ "num" });
         //        grid.display( vo );
         //        vo.save( filename );
-        sdot::VtkOutput<2> vtk_output( { "weight", "num" } );
+        sdot::VtkOutput<3> vtk_output( { "weight", "num", "kind" } );
 
         auto buf_positions = positions.request();
         auto buf_weights = weights.request();
@@ -377,7 +398,7 @@ struct PyPowerDiagramZGrid {
             grid.for_each_laguerre_cell(
                 [&]( auto &lc, std::size_t num_dirac_0, int ) {
                     domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
-                        cp.display( vtk_output, { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ) } );
+                        cp.display( vtk_output, { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ) } );
                     } );
                 },
                 domain.bounds.englobing_convex_polyhedron(),
@@ -391,7 +412,19 @@ struct PyPowerDiagramZGrid {
 
         if ( points ) {
             for( int n = 0; n < positions.shape( 0 ); ++n )
-                vtk_output.add_point( ptr_positions[ n ], { ptr_weights[ n ], TF( n ) } );
+                vtk_output.add_point( ptr_positions[ n ], { ptr_weights[ n ], TF( n ), TF( 1 ) } );
+        }
+
+        if ( centroids ) {
+            std::vector<Pt> c( positions.shape( 0 ) );
+            find_radial_func( func, [&]( auto ft ) {
+                sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
+                    c[ num ] = centroid;
+                } );
+            } );
+
+            for( int n = 0; n < positions.shape( 0 ); ++n )
+                vtk_output.add_point( c[ n ], { ptr_weights[ n ], TF( n ), TF( 2 ) } );
         }
 
         vtk_output.save( filename );
@@ -441,6 +474,8 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( pybind11::init<int>()                                                                                                           , "" )
         .def( "update"                                              , &PowerDiagramZGrid::update                                              , "" )
         .def( "integrals"                                           , &PowerDiagramZGrid::integrals                                           , "" )
+        .def( "boundary_integral"                                   , &PowerDiagramZGrid::boundary_integral                                   , "" )
+        .def( "der_boundary_integral"                               , &PowerDiagramZGrid::der_boundary_integral                               , "" )
         .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights                           , "" )
         .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions, "" )
         .def( "centroids"                                           , &PowerDiagramZGrid::centroids                                           , "" )

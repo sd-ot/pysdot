@@ -60,7 +60,7 @@ def run(n, base_filename, l=0.5):
     velocity = 0.0 * positions
 
     for num_iter in range(200):
-        print(num_iter)
+        print( "num_iter", num_iter)
 
         # barycenters at the beginning
         ot.update_weights()

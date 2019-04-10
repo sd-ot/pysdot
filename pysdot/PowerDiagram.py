@@ -37,6 +37,24 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
+    def boundary_integral( self ):
+        inst = self.update_if_necessary()
+        return inst.boundary_integral(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name()
+        )
+
+    def der_boundary_integral( self ):
+        inst = self.update_if_necessary()
+        return inst.der_boundary_integral(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name()
+        )
+
     def der_integrals_wrt_weights(self):
         inst = self.update_if_necessary()
         return inst.der_integrals_wrt_weights(
@@ -64,7 +82,7 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
-    def display_vtk(self, filename, points=False):
+    def display_vtk(self, filename, points=False, centroids=False):
         dn = os.path.dirname(filename)
         if len(dn):
             os.makedirs(dn, exist_ok=True)
@@ -75,7 +93,8 @@ class PowerDiagram:
             self.domain._inst,
             self.radial_func.name(),
             filename,
-            points
+            points,
+            centroids
         )
 
     def display_vtk_points(self, filename):
