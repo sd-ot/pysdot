@@ -1,5 +1,6 @@
 # from .domain_types import ConvexPolyhedraAssembly
 from .radial_funcs import RadialFuncEntropy
+from .radial_funcs import RadialFuncInBall
 from .radial_funcs import RadialFuncUnit
 from .PowerDiagram import PowerDiagram
 import numpy as np
@@ -52,7 +53,9 @@ class OptimalTransport:
         if self.masses is None:
             if isinstance(self.pd.radial_func, RadialFuncUnit):
                 N = self.pd.positions.shape[0]
-                self.masses = self.pd.domain.measure() / N * np.ones(N)
+                self.masses = np.ones(N) * self.pd.domain.measure() / N
+            elif isinstance(self.pd.radial_func, RadialFuncInBall):
+                self.masses = np.ones(N) * 1e-6
             else:
                 TODO
 
