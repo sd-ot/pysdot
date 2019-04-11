@@ -10,7 +10,7 @@
 
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_centroids_and_integrals_wrt_weight_and_positions.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_integrals_wrt_weights.h"
-#include "../../ext/sdot/src/sdot/PowerDiagram/get_der_boundary_integral.h"
+// #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_boundary_integral.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_boundary_integral.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_integrals.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_centroids.h"
@@ -309,24 +309,24 @@ struct PyPowerDiagramZGrid {
         return get_integrals( positions, weights, domain.bounds, grid, func );
     }
 
-    PD_TYPE boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
-        PD_TYPE res = 0;
-        find_radial_func( func, [&]( auto ft ) {
-            res = get_boundary_integral( grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
-        } );
-        return res;
-    }
+    // PD_TYPE boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+    //     PD_TYPE res = 0;
+    //     find_radial_func( func, [&]( auto ft ) {
+    //         res = get_boundary_integral( grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
+    //     } );
+    //     return res;
+    // }
 
-    pybind11::array_t<PD_TYPE> der_boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
-        pybind11::array_t<PD_TYPE> res;
-        res.resize( { positions.shape( 0 ), positions.shape( 1 ) } );
+    // pybind11::array_t<PD_TYPE> der_boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+    //     pybind11::array_t<PD_TYPE> res;
+    //     res.resize( { positions.shape( 0 ), positions.shape( 1 ) } );
 
-        find_radial_func( func, [&]( auto ft ) {
-            get_der_boundary_integral( reinterpret_cast<Pt *>( res.mutable_data() ), grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
-        } );
+    //     find_radial_func( func, [&]( auto ft ) {
+    //         get_der_boundary_integral( reinterpret_cast<Pt *>( res.mutable_data() ), grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
+    //     } );
 
-        return res;
-    }
+    //     return res;
+    // }
 
     pybind11::array_t<PD_TYPE> centroids( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
         return get_centroids( positions, weights, domain.bounds, grid, func );
@@ -474,8 +474,8 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( pybind11::init<int>()                                                                                                           , "" )
         .def( "update"                                              , &PowerDiagramZGrid::update                                              , "" )
         .def( "integrals"                                           , &PowerDiagramZGrid::integrals                                           , "" )
-        .def( "boundary_integral"                                   , &PowerDiagramZGrid::boundary_integral                                   , "" )
-        .def( "der_boundary_integral"                               , &PowerDiagramZGrid::der_boundary_integral                               , "" )
+        // .def( "boundary_integral"                                   , &PowerDiagramZGrid::boundary_integral                                   , "" )
+        // .def( "der_boundary_integral"                               , &PowerDiagramZGrid::der_boundary_integral                               , "" )
         .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights                           , "" )
         .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions, "" )
         .def( "centroids"                                           , &PowerDiagramZGrid::centroids                                           , "" )
