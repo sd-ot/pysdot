@@ -16,6 +16,7 @@
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_centroids.h"
 
 #include "../../ext/sdot/src/sdot/Display/VtkOutput.h"
+#include "inferno_color_map.h"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
@@ -441,6 +442,91 @@ struct PyPowerDiagramZGrid {
         vtk_output.save( filename );
     }
 
+    void display_asy( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &radial_func, const char *filename, const char *preamble, pybind11::array_t<PD_TYPE> &values, std::string colormap, double linewidth, double dotwidth, bool avoid_bounds, const char *closing, double min_rf, double max_rf ) {
+        auto buf_positions = positions.request();
+        auto buf_weights = weights.request();
+        auto buf_values = values.request();
+
+        auto ptr_positions = reinterpret_cast<const Pt *>( buf_positions.ptr );
+        auto ptr_weights = reinterpret_cast<const TF *>( buf_weights.ptr );
+        auto ptr_values = reinterpret_cast<const TF *>( buf_values.ptr );
+
+        // vtk_output.save( filename );
+        auto get_rgb = [&]( double &r, double &g, double &b, TF v ) {
+            int p = std::min( std::max( v, TF( 0 ) ), TF( 1 ) ) * 255;
+            r = inferno_color_map[ 3 * p + 0 ];
+            g = inferno_color_map[ 3 * p + 1 ];
+            b = inferno_color_map[ 3 * p + 2 ];
+        };
+
+        std::ofstream f( filename );
+        f << preamble;
+
+        if ( linewidth <= 0 && dotwidth ) {
+            if ( values.size() ) {
+                double r, g, b;
+                for( int n = 0; n < positions.shape( 0 ); ++n ) {
+                    get_rgb( r, g, b, ptr_values[ n ] );
+                    f << "dot((" << ptr_positions[ n ][ 0 ] << "," << ptr_positions[ n ][ 1 ] << "),rgb(" << r << "," << g << "," << b << "));\n";
+                }
+            } else {
+                for( int n = 0; n < positions.shape( 0 ); ++n )
+                    f << "dot((" << ptr_positions[ n ][ 0 ] << "," << ptr_positions[ n ][ 1 ] << "));\n";
+            }
+        } else {
+            #if PD_DIM==2
+            std::vector<std::ostringstream> outputs( thread_pool.nb_threads() );
+            find_radial_func( radial_func, [&]( auto ft ) {
+                grid.for_each_laguerre_cell(
+                    [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
+                        domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
+                            if ( values.size() ) {
+                                if ( min_rf < max_rf ) {
+                                    ft.span_for_viz( [&]( double r0, double r1, double val ) {
+                                        auto ncp = cp;
+                                        for( std::size_t na = 0, tn = 20; na < tn; ++na ) {
+                                            double a = 2 * M_PI * na / tn;
+                                            sdot::Point2<TF> d{ cos( a ), sin( a ) };
+                                            ncp.plane_cut( cp.sphere_center + r1 * d, d, 0 );
+                                        }
+                                        double r, g, b;
+                                        std::ostringstream os;
+                                        get_rgb( r, g, b, ( val - min_rf ) / ( max_rf - min_rf ) );
+                                        os << "rgb(" << r << "," << g << "," << b << ")";
+                                        ncp.display_asy( outputs[ num_thread ], "", os.str(), true, avoid_bounds, false );
+                                    }, ptr_weights[ num_dirac_0 ] );
+
+                                    // boundaries
+                                    cp.display_asy( outputs[ num_thread ] );
+                                } else {
+                                    double r, g, b;
+                                    std::ostringstream os;
+                                    get_rgb( r, g, b, ptr_values[ num_dirac_0 ] );
+                                    os << "rgb(" << r << "," << g << "," << b << ")";
+                                    cp.display_asy( outputs[ num_thread ], "", os.str(), true, avoid_bounds );
+                                }
+                            } else {
+                                cp.display_asy( outputs[ num_thread ], "", "", false, avoid_bounds );
+                            }
+                        } );
+                    },
+                    domain.bounds.englobing_convex_polyhedron(),
+                    ptr_positions,
+                    ptr_weights,
+                    positions.shape( 0 ),
+                    false,
+                    ft.need_ball_cut()
+                );
+            } );
+
+            for( auto &os : outputs )
+                f << os.str();
+            #endif
+        }
+
+        f << closing;
+    }
+
     Grid grid;
 };
 
@@ -481,6 +567,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( "centroids"                                           , &PowerDiagramZGrid::centroids                                           , "" )
         .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk                                         , "" )
         .def( "display_vtk_points"                                  , &PowerDiagramZGrid::display_vtk_points                                  , "" )
+        .def( "display_asy"                                         , &PowerDiagramZGrid::display_asy                                         , "" )
     ;
 
     //    m.def( "display_asy"                  , &display_asy                   );

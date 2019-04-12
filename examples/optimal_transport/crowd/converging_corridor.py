@@ -36,6 +36,7 @@ for n in [ 160 ]: # 20, 40, 80,
     color_values = ( color_values - np.min( color_values ) ) / ( np.max( color_values ) - np.min( color_values ) )
 
     ot = OptimalTransport(domain, RadialFuncInBall())
+    ot.set_weights( weights )
     ot.set_masses( np.ones( positions.shape[ 0 ] ) * mass )
 
     nb_timesteps = int( 3 / target_radius )

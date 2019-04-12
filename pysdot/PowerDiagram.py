@@ -47,24 +47,6 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
-    def boundary_integral( self ):
-        inst = self._updated_grid()
-        return inst.boundary_integral(
-            self.positions,
-            self.weights,
-            self.domain._inst,
-            self.radial_func.name()
-        )
-
-    def der_boundary_integral( self ):
-        inst = self._updated_grid()
-        return inst.der_boundary_integral(
-            self.positions,
-            self.weights,
-            self.domain._inst,
-            self.radial_func.name()
-        )
-
     def der_integrals_wrt_weights(self):
         inst = self._updated_grid()
         return inst.der_integrals_wrt_weights(
@@ -98,7 +80,9 @@ class PowerDiagram:
             centroids
         )
 
-    def display_vtk_points(self, filename):
+    def display_vtk_points(self, filename, points=None):
+        if points is None:
+            return self.display_vtk_points(filename, self.positions)
         dn = os.path.dirname(filename)
         if len(dn):
             os.makedirs(dn, exist_ok=True)
@@ -107,6 +91,38 @@ class PowerDiagram:
             self.positions,
             filename
         )
+
+    # make a .asy file for a representation of the power diagram
+    def display_asy(self, filename, preamble="", closing="", output_format="pdf", linewidth=0.02, dotwidth=0.0, values=np.array([]), colormap="inferno", avoid_bounds=False, min_rf=1, max_rf=0):
+        dn = os.path.dirname( filename )
+        if len( dn ):
+            os.makedirs( dn, exist_ok = True )
+
+        p = "settings.outformat = \"{}\";\nunitsize(1cm);\n".format( output_format )
+        if linewidth > 0:
+            p += "defaultpen({}cm);\n".format( linewidth )
+        elif dotwidth > 0:
+            p += "defaultpen({}cm);\n".format( dotwidth / 6 )
+        p += preamble
+
+        inst = self._updated_grid()
+        inst.display_asy(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name(),
+            filename,
+            p,
+            values,
+            colormap,
+            linewidth,
+            dotwidth,
+            avoid_bounds,
+            closing,
+            min_rf,
+            max_rf
+        )
+
 
     def _updated_grid(self):
         # check types
@@ -136,3 +152,21 @@ class PowerDiagram:
         self._domain_is_new = False
 
         return self._inst
+        
+    # def boundary_integral( self ):
+    #     inst = self._updated_grid()
+    #     return inst.boundary_integral(
+    #         self.positions,
+    #         self.weights,
+    #         self.domain._inst,
+    #         self.radial_func.name()
+    #     )
+
+    # def der_boundary_integral( self ):
+    #     inst = self._updated_grid()
+    #     return inst.der_boundary_integral(
+    #         self.positions,
+    #         self.weights,
+    #         self.domain._inst,
+    #         self.radial_func.name()
+    #     )

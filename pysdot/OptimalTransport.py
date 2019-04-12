@@ -114,6 +114,9 @@ class OptimalTransport:
     def display_vtk(self, filename, points=False, centroids=False):
         self.pd.display_vtk(filename, points, centroids)
 
+    def display_asy(self, filename, preamble="", closing="", output_format="pdf", linewidth=0.02, dotwidth=0.0, values=np.array([]), colormap="inferno", avoid_bounds=False, min_rf=1, max_rf=0):
+        self.pd.display_asy(filename, preamble, closing, output_format, linewidth, dotwidth, values, colormap, avoid_bounds, min_rf, max_rf)
+
     def nb_diracs(self):
         return self.pd.positions.shape[0]
 
