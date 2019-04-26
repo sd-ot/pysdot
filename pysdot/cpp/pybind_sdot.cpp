@@ -472,28 +472,26 @@ struct PyPowerDiagramZGrid {
         o << "var max_x = " << max_pt[ 0 ] << ";\n";
         o << "var max_y = " << max_pt[ 1 ] << ";\n";
 
-        // if ( points ) {
-        //     for( int n = 0; n < positions.shape( 0 ); ++n )
-        //         vtk_output.add_point( ptr_positions[ n ], { ptr_weights[ n ], TF( n ), TF( 1 ) } );
-        // }
+        o << "var diracs = [\n";
+        for( int n = 0; n < positions.shape( 0 ); ++n )
+            o << "    [" << ptr_positions[ n ][ 0 ] << ", " << ptr_positions[ n ][ 1 ] << "],\n";
+        o << "];\n";
 
-        // if ( centroids ) {
-        //     std::vector<Pt> c( positions.shape( 0 ) );
-        //     find_radial_func( func, [&]( auto ft ) {
-        //         sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
-        //             c[ num ] = centroid;
-        //         } );
-        //     } );
+        std::vector<Pt> c( positions.shape( 0 ) );
+        find_radial_func( func, [&]( auto ft ) {
+            sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
+                c[ num ] = centroid;
+            } );
+        } );
 
-        //     for( int n = 0; n < positions.shape( 0 ); ++n )
-        //         vtk_output.add_point( c[ n ], { ptr_weights[ n ], TF( n ), TF( 2 ) } );
-        // }
+        o << "var centroids = [\n";
+        for( int n = 0; n < positions.shape( 0 ); ++n )
+            o << "    [" << c[ n ][ 0 ] << ", " << c[ n ][ 1 ] << "],\n";
+        o << "];\n";
 
         std::string res;
         for( std::ostringstream &o : os )
             res += o.str();
-
-
 
         return res;
     }

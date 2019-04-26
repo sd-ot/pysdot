@@ -169,12 +169,40 @@ class PowerDiagram:
                         ctx.setTransform( 1, 0, 0, 1, 0, 0 );
                         ctx.clearRect( 0, 0, w, h );
 
+                        ctx.lineWidth = 1;
+                        ctx.font = '16px serif';
+                        ctx.strokeStyle = "#FF0000";
+                        for( var i = 0; i < centroids.length; ++i ) {
+                            px = ( centroids[ i ][ 0 ] - cx ) * s + 0.5 * w;
+                            py = ( centroids[ i ][ 1 ] - cy ) * s + 0.5 * h;
+                            ctx.fillText( String( i ), px + 5, py );
+
+                            ctx.beginPath();
+                            ctx.arc( px, py, 2, 0, 2 * Math.PI, true );
+                            ctx.stroke();                          
+                        }
+
                         ctx.translate( 0.5 * w, 0.5 * h );
                         ctx.scale( s, s );
                         ctx.translate( - cx, - cy );
 
-                        ctx.lineWidth = 1.0 / s;
+                        var c = 1.0 / s;
+                        ctx.lineWidth = c;
+                        ctx.strokeStyle = "#000000";
                         ctx.stroke( path );
+
+                        ctx.strokeStyle = "#0000FF";
+                        for( var i = 0; i < diracs.length; ++i ) {
+                            ctx.beginPath();
+                            ctx.moveTo( diracs[ i ][ 0 ] - 4 * c, diracs[ i ][ 1 ] );
+                            ctx.lineTo( diracs[ i ][ 0 ] + 4 * c, diracs[ i ][ 1 ] );
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.moveTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] - 4 * c );
+                            ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] + 4 * c );
+                            ctx.stroke();
+                        }
                     }
 
                     function resize() {
