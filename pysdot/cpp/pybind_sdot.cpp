@@ -20,6 +20,7 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 #include <memory>
 
 namespace {
@@ -389,11 +390,10 @@ struct PyPowerDiagramZGrid {
         //        vo.save( filename );
         sdot::VtkOutput<3> vtk_output( { "weight", "num", "kind" } );
 
-        auto buf_positions = positions.request();
-        auto buf_weights = weights.request();
-
-        auto ptr_positions = reinterpret_cast<const Pt *>( buf_positions.ptr );
-        auto ptr_weights = reinterpret_cast<const TF *>( buf_weights.ptr );
+        // auto buf_positions = positions.request();
+        // auto buf_weights = weights.request();
+        auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
+        auto ptr_weights = weights.data();
 
         find_radial_func( func, [&]( auto ft ) {
             grid.for_each_laguerre_cell(
@@ -430,6 +430,74 @@ struct PyPowerDiagramZGrid {
 
         vtk_output.save( filename );
     }
+
+    std::string display_html_canvas( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+        auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
+        auto ptr_weights = reinterpret_cast<const TF *>( weights.data() );
+
+        std::vector<Pt> min_pts( thread_pool.nb_threads(), Pt( + std::numeric_limits<TF>::max() ) );
+        std::vector<Pt> max_pts( thread_pool.nb_threads(), Pt( - std::numeric_limits<TF>::max() ) );
+        std::vector<std::ostringstream> os( thread_pool.nb_threads() );
+        find_radial_func( func, [&]( auto ft ) {
+            grid.for_each_laguerre_cell(
+                [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
+                    domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
+                        cp.display_html_canvas( os[ num_thread ], ptr_weights[ num_dirac_0 ] );
+
+                        cp.for_each_node( [&]( Pt v ) {
+                            min_pts[ num_thread ] = min( min_pts[ num_thread ], v );
+                            max_pts[ num_thread ] = max( max_pts[ num_thread ], v );
+                        } );
+                    } );
+                },
+                domain.bounds.englobing_convex_polyhedron(),
+                ptr_positions,
+                ptr_weights,
+                positions.shape( 0 ),
+                false,
+                ft.need_ball_cut()
+            );
+        } );
+
+        Pt min_pt = min_pts[ 0 ];
+        Pt max_pt = max_pts[ 0 ];
+        for( Pt &p : min_pts )
+            min_pt = min( min_pt, p );
+        for( Pt &p : max_pts )
+            max_pt = max( max_pt, p );
+
+        std::ostringstream &o = os.back();
+        o << "var min_x = " << min_pt[ 0 ] << ";\n";
+        o << "var min_y = " << min_pt[ 1 ] << ";\n";
+        o << "var max_x = " << max_pt[ 0 ] << ";\n";
+        o << "var max_y = " << max_pt[ 1 ] << ";\n";
+
+        // if ( points ) {
+        //     for( int n = 0; n < positions.shape( 0 ); ++n )
+        //         vtk_output.add_point( ptr_positions[ n ], { ptr_weights[ n ], TF( n ), TF( 1 ) } );
+        // }
+
+        // if ( centroids ) {
+        //     std::vector<Pt> c( positions.shape( 0 ) );
+        //     find_radial_func( func, [&]( auto ft ) {
+        //         sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
+        //             c[ num ] = centroid;
+        //         } );
+        //     } );
+
+        //     for( int n = 0; n < positions.shape( 0 ); ++n )
+        //         vtk_output.add_point( c[ n ], { ptr_weights[ n ], TF( n ), TF( 2 ) } );
+        // }
+
+        std::string res;
+        for( std::ostringstream &o : os )
+            res += o.str();
+
+
+
+        return res;
+    }
+
 
     void display_vtk_points( pybind11::array_t<PD_TYPE> &positions, const char *filename ) {
         sdot::VtkOutput<1> vtk_output( { "num" } );
@@ -566,6 +634,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions, "" )
         .def( "centroids"                                           , &PowerDiagramZGrid::centroids                                           , "" )
         .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk                                         , "" )
+        .def( "display_html_canvas"                                 , &PowerDiagramZGrid::display_html_canvas                                 , "" )
         .def( "display_vtk_points"                                  , &PowerDiagramZGrid::display_vtk_points                                  , "" )
         .def( "display_asy"                                         , &PowerDiagramZGrid::display_asy                                         , "" )
     ;

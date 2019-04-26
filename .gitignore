@@ -14,3 +14,4 @@ dist/
 *.vtk
 *.png
 *.log
+*-checkpoint.ipynb

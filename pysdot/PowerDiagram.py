@@ -123,6 +123,139 @@ class PowerDiagram:
             max_rf
         )
 
+    #
+    def display_jupyter( self ):
+        import IPython
+        from urllib.parse import quote
+        return IPython.display.IFrame( 'data:text/html,' + quote( self.display_html() ), width="95%", height=500)
+        
+    # return a string
+    def display_html( self ):
+        inst = self._updated_grid()
+        path = inst.display_html_canvas(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name()
+        )
+
+        beg = """
+            <!doctype html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <title>Hello World</title>
+                <style>* {padding: 0; margin: 0}</style>    
+                <script type="text/javascript">
+                    let path = new Path2D();
+        """
+
+        end = """
+                    var cr = 0.52 * Math.max( max_x - min_x, max_y - min_y );
+                    var cx = 0.5 * ( max_x + min_x );
+                    var cy = 0.5 * ( max_y + min_y );
+                    var orig_click_x = 0;
+                    var orig_click_y = 0;
+                    var pos_click_x = 0;
+                    var pos_click_y = 0;
+
+                    function draw() {
+                        var canvas = document.getElementById( 'my_canvas' );
+                        var w = canvas.width, h = canvas.height;
+                        var m = 0.5 * Math.min( w, h );
+                        var s = m / cr;
+
+                        var ctx = canvas.getContext( '2d' );
+                        ctx.setTransform( 1, 0, 0, 1, 0, 0 );
+                        ctx.clearRect( 0, 0, w, h );
+
+                        ctx.translate( 0.5 * w, 0.5 * h );
+                        ctx.scale( s, s );
+                        ctx.translate( - cx, - cy );
+
+                        ctx.lineWidth = 1.0 / s;
+                        ctx.stroke( path );
+                    }
+
+                    function resize() {
+                        var canvas = document.getElementById( 'my_canvas' );
+                        canvas.width  = window.innerWidth;
+                        canvas.height = window.innerHeight;
+                        draw();
+                    }
+
+                    function init() {
+                        window.addEventListener( "resize", function( event ) { 
+                            resize();
+                        });
+
+                        window.addEventListener( "wheel", function( e ) {  
+                            if ( e.shiftKey ) {
+                                var canvas = document.getElementById( 'my_canvas' );
+                                var w = canvas.width, h = canvas.height;
+                                var m = 0.5 * Math.min( w, h );
+                                var s = m / cr;
+
+                                var d = Math.pow( 2, ( e.deltaY || - e.wheelDeltaY ) / 200.0 );
+                                cx -= ( e.x - 0.5 * w ) * ( d - 1 ) / s;
+                                cy -= ( e.y - 0.5 * h ) * ( d - 1 ) / s;
+                                cr *= d;
+
+                                draw();
+                                return false;
+                            }
+                        }, false );
+
+                        window.addEventListener( "mousedown", function( e ) {  
+                            orig_click_x = e.x;
+                            orig_click_y = e.y;
+                            pos_click_x = e.x;
+                            pos_click_y = e.y;
+                        } );
+
+                        window.addEventListener( "mousemove", function( e ) {  
+                            if ( e.buttons == 1 || e.buttons == 4 ) {
+                                var canvas = document.getElementById( 'my_canvas' );
+                                var w = canvas.width, h = canvas.height;
+                                var m = 0.5 * Math.min( w, h );
+                                var s = m / cr;
+
+                                cx -= ( e.x - pos_click_x ) / s;
+                                cy -= ( e.y - pos_click_y ) / s;
+                                pos_click_x = e.x;
+                                pos_click_y = e.y;
+
+                                draw();
+                            }
+                            // if ( e.buttons == 4 ) {
+                            //     var canvas = document.getElementById( 'my_canvas' );
+                            //     var w = canvas.width, h = canvas.height;
+                            //     var m = 0.5 * Math.min( w, h );
+                            //     var s = m / cr;
+
+                            //     var d = Math.pow( 2, ( pos_click_y - e.y ) / 200.0 );
+                            //     pos_click_x = e.x;
+                            //     pos_click_y = e.y;
+
+                            //     cx -= ( orig_click_x - 0.5 * w ) * ( d - 1 ) / s;
+                            //     cy -= ( orig_click_y - 0.5 * h ) * ( d - 1 ) / s;
+                            //     cr *= d;
+
+                            //     draw();
+                            // }
+                        } );
+
+                        resize();
+                    }
+                </script>
+            </head>
+            <body onload="init();">
+            <canvas id="my_canvas" style="position: absolute; display: block"></canvas>
+            </body>
+            </html>
+        """
+
+        return beg + path + end
 
     def _updated_grid(self):
         # check types
