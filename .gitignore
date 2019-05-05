@@ -15,3 +15,5 @@ dist/
 *.png
 *.log
 *-checkpoint.ipynb
+.ipynb_checkpoints
+clay.jpg

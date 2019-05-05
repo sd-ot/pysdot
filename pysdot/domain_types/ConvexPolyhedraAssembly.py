@@ -26,6 +26,18 @@ class ConvexPolyhedraAssembly:
     def sub_box(self, min_pos, max_pos, coeff=1.0, cut_id=-1):
         self.add_box( min_pos, max_pos, - coeff, cut_id )
 
+
+    def add_img(self, min_pos, max_pos, img, cut_id=-1):
+        sx = 1.0 * ( max_pos[ 0 ] - min_pos[ 0 ] ) / img.shape[ 1 ]
+        sy = 1.0 * ( max_pos[ 1 ] - min_pos[ 1 ] ) / img.shape[ 0 ]
+        for y in range( img.shape[ 0 ] ):
+            for x in range( img.shape[ 1 ] ):
+                self.add_box(
+                    [ min_pos[ 0 ] + sx * ( x + 0 ), min_pos[ 1 ] + sy * ( y + 0 ) ],
+                    [ min_pos[ 0 ] + sx * ( x + 1 ), min_pos[ 1 ] + sy * ( y + 1 ) ],
+                    img[ y, x ]
+                )
+
     def measure(self):
         if self._inst:
             return self._inst.measure()

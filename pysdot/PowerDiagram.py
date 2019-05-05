@@ -124,13 +124,13 @@ class PowerDiagram:
         )
 
     #
-    def display_jupyter( self ):
+    def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True):
         import IPython
         from urllib.parse import quote
-        return IPython.display.IFrame( 'data:text/html,' + quote( self.display_html() ), width="95%", height=500)
+        return IPython.display.IFrame( 'data:text/html,' + quote( self.display_html( disp_centroids, disp_positions, disp_ids ) ), width="95%", height=500)
         
     # return a string
-    def display_html( self ):
+    def display_html( self, disp_centroids=True, disp_positions=True, disp_ids=True ):
         inst = self._updated_grid()
         path = inst.display_html_canvas(
             self.positions,
@@ -151,6 +151,8 @@ class PowerDiagram:
         """
 
         end = """
+                    var disp_centroids = __disp_centroids__, disp_positions = __disp_positions__, disp_ids = __disp_ids__;
+
                     var cr = 0.52 * Math.max( max_x - min_x, max_y - min_y );
                     var cx = 0.5 * ( max_x + min_x );
                     var cy = 0.5 * ( max_y + min_y );
@@ -175,11 +177,15 @@ class PowerDiagram:
                         for( var i = 0; i < centroids.length; ++i ) {
                             px = ( centroids[ i ][ 0 ] - cx ) * s + 0.5 * w;
                             py = ( centroids[ i ][ 1 ] - cy ) * s + 0.5 * h;
-                            ctx.fillText( String( i ), px + 5, py );
+                            if ( disp_ids ) {
+                                ctx.fillText( String( i ), px + 5, py );
+                            }
 
-                            ctx.beginPath();
-                            ctx.arc( px, py, 2, 0, 2 * Math.PI, true );
-                            ctx.stroke();                          
+                            if ( disp_centroids ) {
+                                ctx.beginPath();
+                                ctx.arc( px, py, 2, 0, 2 * Math.PI, true );
+                                ctx.stroke();
+                            }
                         }
 
                         ctx.translate( 0.5 * w, 0.5 * h );
@@ -192,16 +198,18 @@ class PowerDiagram:
                         ctx.stroke( path );
 
                         ctx.strokeStyle = "#0000FF";
-                        for( var i = 0; i < diracs.length; ++i ) {
-                            ctx.beginPath();
-                            ctx.moveTo( diracs[ i ][ 0 ] - 4 * c, diracs[ i ][ 1 ] );
-                            ctx.lineTo( diracs[ i ][ 0 ] + 4 * c, diracs[ i ][ 1 ] );
-                            ctx.stroke();
+                        if ( disp_positions ) {
+                            for( var i = 0; i < diracs.length; ++i ) {
+                                ctx.beginPath();
+                                ctx.moveTo( diracs[ i ][ 0 ] - 4 * c, diracs[ i ][ 1 ] );
+                                ctx.lineTo( diracs[ i ][ 0 ] + 4 * c, diracs[ i ][ 1 ] );
+                                ctx.stroke();
 
-                            ctx.beginPath();
-                            ctx.moveTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] - 4 * c );
-                            ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] + 4 * c );
-                            ctx.stroke();
+                                ctx.beginPath();
+                                ctx.moveTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] - 4 * c );
+                                ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] + 4 * c );
+                                ctx.stroke();
+                            }
                         }
                     }
 
@@ -281,7 +289,7 @@ class PowerDiagram:
             <canvas id="my_canvas" style="position: absolute; display: block"></canvas>
             </body>
             </html>
-        """
+        """.replace( "__disp_centroids__", str( 1 * disp_centroids ) ).replace( "__disp_positions__", str( 1 * disp_positions ) ).replace( "__disp_ids__", str( 1 * disp_ids ) )
 
         return beg + path + end
 
