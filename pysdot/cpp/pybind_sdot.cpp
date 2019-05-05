@@ -27,7 +27,7 @@ namespace {
     template<class FU>
     void find_radial_func( const std::string &func, const FU &fu ) {
         if ( func == "1" || func == "unit" ) {
-            fu( FunctionEnum::Unit() );
+            fu( sdot::FunctionEnum::Unit() );
             return;
         }
 
@@ -35,17 +35,17 @@ namespace {
             PD_TYPE eps;
             std::istringstream is( func.substr( 13, func.size() - 14 ) );
             is >> eps;
-            fu( FunctionEnum::ExpWmR2db<PD_TYPE>{ eps } );
+            fu( sdot::FunctionEnum::ExpWmR2db<PD_TYPE>{ eps } );
             return;
         }
 
         if ( func == "r**2" || func == "r^2" ) {
-            fu( FunctionEnum::R2() );
+            fu( sdot::FunctionEnum::R2() );
             return;
         }
 
         if ( func == "in_ball(weight**0.5)" ) {
-            fu( FunctionEnum::InBallW05() );
+            fu( sdot::FunctionEnum::InBallW05() );
             return;
         }
 
