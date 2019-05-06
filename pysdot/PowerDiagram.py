@@ -126,8 +126,28 @@ class PowerDiagram:
     #
     def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True):
         import IPython
-        from urllib.parse import quote
-        return IPython.display.IFrame( 'data:text/html,' + quote( self.display_html( disp_centroids, disp_positions, disp_ids ) ), width="95%", height=500)
+        return IPython.display.HTML( self.display_html( disp_centroids, disp_positions, disp_ids ) )
+
+    #
+    def display_jupyter_test(self, val):
+        import IPython
+        return IPython.display.HTML( """
+            <canvas id="my_canvas" width="100%" height="500"></canvas>
+
+            <script type="text/javascript">
+                var canvas = document.getElementById( 'my_canvas' );
+                var w = canvas.width, h = canvas.height;
+                var m = 0.5 * Math.min( w, h );
+
+                var ctx = canvas.getContext( '2d' );
+                ctx.setTransform( 1, 0, 0, 1, 0, 0 );
+                ctx.clearRect( 0, 0, w, h );
+
+                ctx.font = '16px serif';
+                ctx.strokeStyle = "#FF0000";
+                ctx.fillText( String( proute ), 15, 150 );
+            </script>
+        """.replace( "proute", str( val ) ) )
         
     # return a string
     def display_html( self, disp_centroids=True, disp_positions=True, disp_ids=True ):
@@ -140,155 +160,166 @@ class PowerDiagram:
         )
 
         beg = """
-            <!doctype html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <title>Hello World</title>
-                <style>* {padding: 0; margin: 0}</style>    
-                <script type="text/javascript">
-                    let path = new Path2D();
+            <canvas id="my_canvas" height="400" style="width: 100%; overflow: hidden;">
+            </canvas>
+
+            <script type="text/javascript">
+                var path = new Path2D();
         """
 
         end = """
-                    var disp_centroids = __disp_centroids__, disp_positions = __disp_positions__, disp_ids = __disp_ids__;
+                var disp_centroids = __disp_centroids__, disp_positions = __disp_positions__, disp_ids = __disp_ids__;
 
-                    var cr = 0.52 * Math.max( max_x - min_x, max_y - min_y );
-                    var cx = 0.5 * ( max_x + min_x );
-                    var cy = 0.5 * ( max_y + min_y );
-                    var orig_click_x = 0;
-                    var orig_click_y = 0;
-                    var pos_click_x = 0;
-                    var pos_click_y = 0;
+                var cr = 0.52 * Math.max( max_x - min_x, max_y - min_y );
+                var cx = 0.5 * ( max_x + min_x );
+                var cy = 0.5 * ( max_y + min_y );
+                var orig_click_x = 0;
+                var orig_click_y = 0;
+                var pos_click_x = 0;
+                var pos_click_y = 0;
 
-                    function draw() {
-                        var canvas = document.getElementById( 'my_canvas' );
-                        var w = canvas.width, h = canvas.height;
-                        var m = 0.5 * Math.min( w, h );
-                        var s = m / cr;
+                function draw() {
+                    var canvas = document.getElementById( 'my_canvas' );
+                    var w = canvas.width, h = canvas.height;
+                    var m = 0.5 * Math.min( w, h );
+                    var s = m / cr;
 
-                        var ctx = canvas.getContext( '2d' );
-                        ctx.setTransform( 1, 0, 0, 1, 0, 0 );
-                        ctx.clearRect( 0, 0, w, h );
+                    var ctx = canvas.getContext( '2d' );
+                    ctx.setTransform( 1, 0, 0, 1, 0, 0 );
+                    ctx.clearRect( 0, 0, w, h );
 
-                        ctx.lineWidth = 1;
-                        ctx.font = '16px serif';
-                        ctx.strokeStyle = "#FF0000";
-                        for( var i = 0; i < centroids.length; ++i ) {
-                            px = ( centroids[ i ][ 0 ] - cx ) * s + 0.5 * w;
-                            py = ( centroids[ i ][ 1 ] - cy ) * s + 0.5 * h;
-                            if ( disp_ids ) {
-                                ctx.fillText( String( i ), px + 5, py );
-                            }
-
-                            if ( disp_centroids ) {
-                                ctx.beginPath();
-                                ctx.arc( px, py, 2, 0, 2 * Math.PI, true );
-                                ctx.stroke();
-                            }
+                    ctx.lineWidth = 1;
+                    ctx.font = '16px serif';
+                    ctx.strokeStyle = "#FF0000";
+                    for( var i = 0; i < centroids.length; ++i ) {
+                        px = ( centroids[ i ][ 0 ] - cx ) * s + 0.5 * w;
+                        py = ( centroids[ i ][ 1 ] - cy ) * s + 0.5 * h;
+                        if ( disp_ids ) {
+                            ctx.fillText( String( i ), px + 5, py );
                         }
 
-                        ctx.translate( 0.5 * w, 0.5 * h );
-                        ctx.scale( s, s );
-                        ctx.translate( - cx, - cy );
-
-                        var c = 1.0 / s;
-                        ctx.lineWidth = c;
-                        ctx.strokeStyle = "#000000";
-                        ctx.stroke( path );
-
-                        ctx.strokeStyle = "#0000FF";
-                        if ( disp_positions ) {
-                            for( var i = 0; i < diracs.length; ++i ) {
-                                ctx.beginPath();
-                                ctx.moveTo( diracs[ i ][ 0 ] - 4 * c, diracs[ i ][ 1 ] );
-                                ctx.lineTo( diracs[ i ][ 0 ] + 4 * c, diracs[ i ][ 1 ] );
-                                ctx.stroke();
-
-                                ctx.beginPath();
-                                ctx.moveTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] - 4 * c );
-                                ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] + 4 * c );
-                                ctx.stroke();
-                            }
+                        if ( disp_centroids ) {
+                            ctx.beginPath();
+                            ctx.arc( px, py, 2, 0, 2 * Math.PI, true );
+                            ctx.stroke();
                         }
                     }
 
-                    function resize() {
-                        var canvas = document.getElementById( 'my_canvas' );
-                        canvas.width  = window.innerWidth;
-                        canvas.height = window.innerHeight;
-                        draw();
+                    ctx.translate( 0.5 * w, 0.5 * h );
+                    ctx.scale( s, s );
+                    ctx.translate( - cx, - cy );
+
+                    var c = 1.0 / s;
+                    ctx.lineWidth = c;
+                    ctx.strokeStyle = "#000000";
+                    ctx.stroke( path );
+
+                    ctx.strokeStyle = "#0000FF";
+                    if ( disp_positions ) {
+                        for( var i = 0; i < diracs.length; ++i ) {
+                            ctx.beginPath();
+                            ctx.moveTo( diracs[ i ][ 0 ] - 4 * c, diracs[ i ][ 1 ] );
+                            ctx.lineTo( diracs[ i ][ 0 ] + 4 * c, diracs[ i ][ 1 ] );
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.moveTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] - 4 * c );
+                            ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] + 4 * c );
+                            ctx.stroke();
+                        }
                     }
+                }
 
-                    function init() {
-                        window.addEventListener( "resize", function( event ) { 
-                            resize();
-                        });
+                function resize() {
+                    var canvas = document.getElementById( 'my_canvas' );
+                    canvas.width = canvas.offsetWidth;
+                    draw();
+                }
 
-                        window.addEventListener( "wheel", function( e ) {  
-                            if ( e.shiftKey ) {
-                                var canvas = document.getElementById( 'my_canvas' );
-                                var w = canvas.width, h = canvas.height;
-                                var m = 0.5 * Math.min( w, h );
-                                var s = m / cr;
+                function getRelativeCoordinates( event, element ) {
+                    const offset = { left: 0, top: 0 };
+                    while( element != null ) {
+                        offset.left += element.offsetLeft;
+                        offset.top += element.offsetTop;
+                        console.log( element.pageLeft );
+                        element = element.offsetParent;
+                    }
+                    return { 
+                        x: event.x - offset.left,
+                        y: event.y - offset.top
+                    }; 
 
-                                var d = Math.pow( 2, ( e.deltaY || - e.wheelDeltaY ) / 200.0 );
-                                cx -= ( e.x - 0.5 * w ) * ( d - 1 ) / s;
-                                cy -= ( e.y - 0.5 * h ) * ( d - 1 ) / s;
-                                cr *= d;
+                }
+                function init() {
+                    var canvas = document.getElementById( 'my_canvas' );
 
-                                draw();
-                                return false;
-                            }
-                        }, false );
+                    window.addEventListener( "resize", function( event ) { 
+                        resize();
+                    });
 
-                        window.addEventListener( "mousedown", function( e ) {  
-                            orig_click_x = e.x;
-                            orig_click_y = e.y;
+                    canvas.addEventListener( "wheel", function( e ) {  
+                        if ( e.shiftKey ) {
+                            var canvas = document.getElementById( 'my_canvas' );
+                            var r = getRelativeCoordinates( e, canvas );
+                            var w = canvas.width, h = canvas.height;
+                            var m = 0.5 * Math.min( w, h );
+                            var s = m / cr;
+
+                            var d = Math.pow( 2, ( e.deltaY || - e.wheelDeltaY ) / 200.0 );
+                            cx -= ( r.x - 0.5 * w ) * ( d - 1 ) / s;
+                            cy -= ( r.y - 0.5 * h ) * ( d - 1 ) / s;
+                            cr *= d;
+
+                            draw();
+                            return false;
+                        }
+                    }, false );
+
+                    window.addEventListener( "mousedown", function( e ) {  
+                        orig_click_x = e.x;
+                        orig_click_y = e.y;
+                        pos_click_x = e.x;
+                        pos_click_y = e.y;
+                    } );
+
+                    window.addEventListener( "mousemove", function( e ) {  
+                        if ( e.buttons == 1 || e.buttons == 4 ) {
+                            var canvas = document.getElementById( 'my_canvas' );
+                            var w = canvas.width, h = canvas.height;
+                            var m = 0.5 * Math.min( w, h );
+                            var s = m / cr;
+
+                            cx -= ( e.x - pos_click_x ) / s;
+                            cy -= ( e.y - pos_click_y ) / s;
                             pos_click_x = e.x;
                             pos_click_y = e.y;
-                        } );
 
-                        window.addEventListener( "mousemove", function( e ) {  
-                            if ( e.buttons == 1 || e.buttons == 4 ) {
-                                var canvas = document.getElementById( 'my_canvas' );
-                                var w = canvas.width, h = canvas.height;
-                                var m = 0.5 * Math.min( w, h );
-                                var s = m / cr;
+                            draw();
+                        }
+                        // if ( e.buttons == 4 ) {
+                        //     var canvas = document.getElementById( 'my_canvas' );
+                        //     var w = canvas.width, h = canvas.height;
+                        //     var m = 0.5 * Math.min( w, h );
+                        //     var s = m / cr;
 
-                                cx -= ( e.x - pos_click_x ) / s;
-                                cy -= ( e.y - pos_click_y ) / s;
-                                pos_click_x = e.x;
-                                pos_click_y = e.y;
+                        //     var d = Math.pow( 2, ( pos_click_y - e.y ) / 200.0 );
+                        //     pos_click_x = e.x;
+                        //     pos_click_y = e.y;
 
-                                draw();
-                            }
-                            // if ( e.buttons == 4 ) {
-                            //     var canvas = document.getElementById( 'my_canvas' );
-                            //     var w = canvas.width, h = canvas.height;
-                            //     var m = 0.5 * Math.min( w, h );
-                            //     var s = m / cr;
+                        //     cx -= ( orig_click_x - 0.5 * w ) * ( d - 1 ) / s;
+                        //     cy -= ( orig_click_y - 0.5 * h ) * ( d - 1 ) / s;
+                        //     cr *= d;
 
-                            //     var d = Math.pow( 2, ( pos_click_y - e.y ) / 200.0 );
-                            //     pos_click_x = e.x;
-                            //     pos_click_y = e.y;
+                        //     draw();
+                        // }
+                    } );
 
-                            //     cx -= ( orig_click_x - 0.5 * w ) * ( d - 1 ) / s;
-                            //     cy -= ( orig_click_y - 0.5 * h ) * ( d - 1 ) / s;
-                            //     cr *= d;
+                    // setTimeout( resize, 0 );
+                    resize();
+                }
 
-                            //     draw();
-                            // }
-                        } );
-
-                        resize();
-                    }
-                </script>
-            </head>
-            <body onload="init();">
-            <canvas id="my_canvas" style="position: absolute; display: block"></canvas>
-            </body>
-            </html>
+                init();
+            </script>
         """.replace( "__disp_centroids__", str( 1 * disp_centroids ) ).replace( "__disp_positions__", str( 1 * disp_positions ) ).replace( "__disp_ids__", str( 1 * disp_ids ) )
 
         return beg + path + end

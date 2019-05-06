@@ -5,7 +5,7 @@ import pylab as plt
 import numpy as np
 import imageio
 
-dws = 15
+dws = 5
 img = imageio.imread("clay.jpg")
 img = img[ :, :, 1 ]
 
@@ -31,7 +31,7 @@ ot.obj_max_dw = 1e-5
 ot.verbosity = True
 
 # solve
-ot.adjust_weights( relax=0.3 )
+ot.adjust_weights( relax=1.0 )
 
 # display
 ot.pd.display_vtk( "results/pd.vtk", centroids=True )
