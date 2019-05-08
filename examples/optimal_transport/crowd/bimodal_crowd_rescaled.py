@@ -5,14 +5,8 @@ from util.fast_marching import GradGrid
 import numpy as np
 
 
-def in_box(Y, bbmin, bbmax):
-    return np.logical_and(np.logical_and(Y[:,0] >= bbmin[0],
-                                         Y[:,1] >= bbmin[1]),
-                          np.logical_and(Y[:,0] >= bbmin[0],
-                                         Y[:,1] >= bbmin[1]))
-
 # constants
-for na in [80,]: #[ 20, 40, 80, 160]:
+for na in [30,80]: #40,80,160
     directory = "results/bimodal_crowd_{}".format( na )
 
     # constants
@@ -39,10 +33,6 @@ for na in [80,]: #[ 20, 40, 80, 160]:
     domain.add_box( bb3min, bb3max )
     domain.display_boundaries_vtk( directory+"/bounds.vtk" )
 
-    all_in_boxes = lambda Y: np.all(np.logical_or(in_box(bb1min, bb1max),
-                                                  np.logical_or(in_box(Y, bb2min, bb2max),
-                                                                in_box(Y, bb3min, bb3max))))
-
     #"draw((0,0)--(3,0)--(3,1)--
     #(4,1)--(4,0)--(7,0)--(7,3)--
     #(4,3)--(4,2)--(3,2)--(3,3)--(0,3)--cycle);\n
@@ -62,12 +52,12 @@ for na in [80,]: #[ 20, 40, 80, 160]:
     color_values = positions[ :, 1 ]
     color_values = ( color_values - np.min( color_values ) ) / np.ptp( color_values )
     
-    h_weights = []
     h_positions = []
 
-    T = 6.5
+    T = 3
     nb_timesteps = int( T / timestep )
-    display_timesteps = np.linspace(0, nb_timesteps-1, 100, dtype = int)
+    display_timesteps = np.linspace(0, nb_timesteps-1, 6, dtype = int)
+    save_timesteps = np.linspace(0, nb_timesteps-1, 100, dtype = int)
     
     ot = OptimalTransport(domain, RadialFuncInBall())
     ot.set_weights( weights )
@@ -87,8 +77,8 @@ for na in [80,]: #[ 20, 40, 80, 160]:
             j = display_timesteps.tolist().index(i)
             ot.display_asy( directory + "/pd_{:03}.asy".format( j ), values=color_values, linewidth=0.0005, dotwidth=target_radius * 0, closing=domain_asy, avoid_bounds=True )
             ot.display_vtk( directory + "/pd_{:03}.vtk".format( j ) )
-            h_positions.append( positions )
-            h_weights.append( weights )
+        if i in save_timesteps:
+            h_positions.append( positions.copy() )
     
         # update positions
         descent_direction = np.zeros_like(positions)
@@ -104,5 +94,5 @@ for na in [80,]: #[ 20, 40, 80, 160]:
 
     # output with timeout information
     timeout = ( timeout - np.min( timeout ) ) / np.ptp( timeout )
-    for i in range( len( h_weights ) ):
-        ot.display_asy( directory + "/pd_timeout_{:03}.asy".format( i ), "in_ball(weight**0.5)", h_positions[ i ], h_weights[ i ], domain, values = timeout, linewidth = 0.005, dotwidth = target_radius * 0, closing = domain_asy, avoid_bounds = True )
+    np.save(directory + "/positions.npy", h_positions)
+    np.save(directory + "/timeout.npy", timeout)
