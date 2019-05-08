@@ -55,13 +55,14 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
-    def der_integrals_wrt_weights(self):
+    def der_integrals_wrt_weights(self, stop_if_void=False):
         inst = self._updated_grid()
         return inst.der_integrals_wrt_weights(
             self.positions,
             self.weights,
             self.domain._inst,
-            self.radial_func.name()
+            self.radial_func.name(),
+            stop_if_void
         )
 
     def der_centroids_and_integrals_wrt_weight_and_positions(self):

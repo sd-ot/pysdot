@@ -334,7 +334,7 @@ struct PyPowerDiagramZGrid {
         return get_centroids( positions, weights, domain.bounds, grid, func );
     }
 
-    PyDerResult<dim,TF> der_integrals_wrt_weights( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+    PyDerResult<dim,TF> der_integrals_wrt_weights( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, bool stop_if_void ) {
         auto buf_positions = positions.request();
         auto buf_weights = weights.request();
 
@@ -348,7 +348,7 @@ struct PyPowerDiagramZGrid {
 
         PyDerResult<dim,TF> res;
         find_radial_func( func, [&]( auto ft ) {
-            res.error = sdot::get_der_integrals_wrt_weights( w_m_offsets, w_m_columns, w_m_values, w_v_values, grid, domain.bounds, ptr_positions, ptr_weights, std::size_t( positions.shape( 0 ) ), ft );
+            res.error = sdot::get_der_integrals_wrt_weights( w_m_offsets, w_m_columns, w_m_values, w_v_values, grid, domain.bounds, ptr_positions, ptr_weights, std::size_t( positions.shape( 0 ) ), ft, stop_if_void );
         } );
 
         vcp( res.m_offsets, w_m_offsets );

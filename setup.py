@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from setuptools import setup, find_packages, Extension
+from setuptools.dist import Distribution
 import sys
 
 extra_compile_args = []
@@ -31,6 +32,10 @@ for TF in ["double"]:
             extra_compile_args=extra_compile_args,
         ))
 
+class BinaryDistribution(Distribution):
+    def is_pure(self):
+        return False
+
 setup(
     name='pysdot',
     version='0.1',
@@ -38,6 +43,8 @@ setup(
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'
     ]),
+    include_package_data=True,
+    distclass=BinaryDistribution,
     ext_modules=ext_modules,
     install_requires=[
         "numpy",
