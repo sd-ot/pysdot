@@ -165,7 +165,13 @@ class PowerDiagram:
             canvas.height = 400;
             canvas.width = 940;
 
-            element.append( canvas );
+            if ( typeof element != "undefined" ) {
+                element.append( canvas );
+            } else {
+                var oa = document.querySelector( "#output-area" );
+                oa.removeChild( oa.lastChild );
+                oa.appendChild( canvas );
+            }
 
             function draw() {
                 var w = canvas.width, h = canvas.height;
