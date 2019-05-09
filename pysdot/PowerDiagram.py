@@ -142,7 +142,7 @@ class PowerDiagram:
         )
 
     #
-    def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True, disp_arrows=True):
+    def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True, disp_arrows=False):
         inst = self._updated_grid()
         path = inst.display_html_canvas(
             self.positions,
@@ -158,7 +158,7 @@ class PowerDiagram:
             __paths__
 
             // display parameters
-            var disp_centroids = __disp_centroids__, disp_positions = __disp_positions__, disp_ids = __disp_ids__;
+            var disp_centroids = __disp_centroids__, disp_positions = __disp_positions__, disp_ids = __disp_ids__, disp_arrows = __disp_arrows__;
             var cr = 0.52 * Math.max( max_x - min_x, max_y - min_y );
             var cx = 0.5 * ( max_x + min_x );
             var cy = 0.5 * ( max_y + min_y );
@@ -232,6 +232,17 @@ class PowerDiagram:
                         ctx.stroke();
                     }
                 }
+
+                ctx.strokeStyle = "#0000FF";
+                if ( disp_arrows ) {
+                    for( var i = 0; i < diracs.length; ++i ) {
+                        ctx.beginPath();
+                        ctx.moveTo( centroids[ i ][ 0 ], centroids[ i ][ 1 ] );
+                        ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] );
+                        ctx.stroke();
+                    }
+                }
+
             }
 
             canvas.addEventListener( "wheel", function( e ) {  
@@ -280,6 +291,7 @@ class PowerDiagram:
         jsct = jsct.replace( "\n            ", "\n" )
         jsct = jsct.replace( "__disp_centroids__", str( 1 * disp_centroids ) )
         jsct = jsct.replace( "__disp_positions__", str( 1 * disp_positions ) )
+        jsct = jsct.replace( "__disp_arrows__", str( 1 * disp_arrows ) )
         jsct = jsct.replace( "__disp_ids__", str( 1 * disp_ids ) )
         jsct = jsct.replace( "__paths__", path )
 
