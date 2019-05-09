@@ -12,9 +12,9 @@ def dist(a, b):
 
 
 class OptimalTransport:
-    def __init__(self, domain, radial_func=RadialFuncUnit(),
+    def __init__(self, positions=None, weights=None, domain=None, radial_func=RadialFuncUnit(),
                  obj_max_dw=1e-8, linear_solver="Petsc"):
-        self.pd = PowerDiagram(domain, radial_func)
+        self.pd = PowerDiagram(positions, weights, domain, radial_func)
         self.obj_max_dw = obj_max_dw
 
         self.masses = None
@@ -66,7 +66,7 @@ class OptimalTransport:
         old_weights = self.pd.weights + 0.0
         for _ in range(self.max_iter):
             # derivatives
-            mvs = self.pd.der_integrals_wrt_weights()
+            mvs = self.pd.der_integrals_wrt_weights(stop_if_void=True)
             if mvs.error:
                 ratio = 0.5
                 self.pd.set_weights(
@@ -97,7 +97,7 @@ class OptimalTransport:
             x = linear_solver.solve(A, b)
 
             # update weights
-            self.pd.set_weights(self.pd.weights - relax * x)
+            self.pd.set_weights(self.pd.get_weights() - relax * x)
 
             nx = np.max(np.abs(x))
             if self.verbosity:

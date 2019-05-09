@@ -25,13 +25,22 @@ class PowerDiagram:
         if not ( weights is None ):
             self.set_weights( weights )
 
+    def get_positions(self):
+        return self.positions
+
     def set_positions(self, positions):
         self._positions_are_new = True
         self.positions = positions
 
+    def get_weights(self):
+        return self.weights
+
     def set_weights(self, weights):
         self._weights_are_new = True
         self.weights = weights
+
+    def get_domain(self):
+        return self.domain
 
     def set_domain(self, domain):
         self._domain_is_new = True
@@ -133,7 +142,7 @@ class PowerDiagram:
         )
 
     #
-    def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True):
+    def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True, disp_arrows=True):
         inst = self._updated_grid()
         path = inst.display_html_canvas(
             self.positions,
