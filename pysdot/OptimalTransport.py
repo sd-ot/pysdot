@@ -40,6 +40,12 @@ class OptimalTransport:
         self._masses_are_new = True
         self.masses = new_masses
 
+    def get_domain(self):
+        return self.pd.get_domain()
+
+    def set_domain(self, new_domain):
+        self.pd.set_domain(new_domain)
+
     def get_weights(self):
         return self.pd.weights
 
@@ -74,7 +80,8 @@ class OptimalTransport:
                 )
                 if ret_if_err:
                     return True
-                print("bim (going back)")
+                if self.verbosity:
+                    print("bim (going back)")
                 continue
             old_weights = self.pd.weights
 

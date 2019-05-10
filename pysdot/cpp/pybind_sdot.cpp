@@ -5,6 +5,7 @@
 #include "../../ext/sdot/src/sdot/Support/Mpi.cpp"
 
 #include "../../ext/sdot/src/sdot/Domains/ConvexPolyhedronAssembly.h"
+#include "../../ext/sdot/src/sdot/Domains/ScaledImage.h"
 
 #include "../../ext/sdot/src/sdot/PowerDiagram/Visitors/SpZGrid.h"
 
@@ -284,6 +285,72 @@ struct PyConvexPolyhedraAssembly {
 };
 
 template<int dim,class TF>
+struct PyScaledImage {
+    using TB = sdot::ScaledImage<PyPc>;
+    using Pt = typename TB::Pt;
+    using TI = typename TB::TI;
+
+    PyScaledImage( pybind11::array_t<PD_TYPE> &min_pt, pybind11::array_t<PD_TYPE> &max_pt, pybind11::array_t<PD_TYPE> &img ) {
+         if ( min_pt.size() != PyPc::dim )
+             throw pybind11::value_error( "wrong dimensions for point" );
+         if ( max_pt.size() != PyPc::dim )
+             throw pybind11::value_error( "wrong dimensions for point" );
+        std::array<TI,dim> sizes;
+        for( std::size_t d = 0; d < dim; ++d )
+            sizes[ d ] = img.shape( dim - 1 - d );
+        bounds = { Pt( min_pt.data() ), Pt( max_pt.data() ), img.data(), sizes };
+    }
+
+    // PD_TYPE coeff_at( pybind11::array_t<PD_TYPE> &point ) {
+    //     auto buf_point = point.request(); auto ptr_buf_point = (PD_TYPE *)buf_point.ptr;
+    // }
+
+    void display_boundaries_vtk( const char *filename ) {
+        sdot::VtkOutput<1,TF> vo;
+        bounds.display_boundaries( vo );
+        vo.save( filename );
+    }
+
+    PD_TYPE coeff_at( pybind11::array_t<PD_TYPE> &point ) {
+        auto buf_point = point.request(); auto ptr_buf_point = (PD_TYPE *)buf_point.ptr;
+        if ( point.size() != PyPc::dim )
+            throw pybind11::value_error( "wrong dimensions for point" );
+        return bounds.coeff_at( ptr_buf_point );
+    }
+
+    PD_TYPE measure() {
+        return bounds.measure();
+    }
+
+    pybind11::array_t<PD_TYPE> min_position() {
+        pybind11::array_t<PD_TYPE> res;
+        res.resize( { PyPc::dim } );
+        auto buf_res = res.request();
+        auto ptr_res = (PD_TYPE *)buf_res.ptr;
+
+        auto p = bounds.min_position();
+        for( std::size_t d = 0; d < PyPc::dim; ++d )
+            ptr_res[ d ] = p[ d ];
+        return res;
+    }
+
+    pybind11::array_t<PD_TYPE> max_position() {
+        pybind11::array_t<PD_TYPE> res;
+        res.resize( { PyPc::dim } );
+        auto buf_res = res.request();
+        auto ptr_res = (PD_TYPE *)buf_res.ptr;
+
+        auto p = bounds.max_position();
+        for( std::size_t d = 0; d < PyPc::dim; ++d )
+            ptr_res[ d ] = p[ d ];
+        return res;
+    }
+
+    TB bounds;
+};
+
+
+template<int dim,class TF>
 struct PyPowerDiagramZGrid {
     using Grid = sdot::SpZGrid<PyPc>;
     using Pt   = typename Grid::Pt;
@@ -311,24 +378,10 @@ struct PyPowerDiagramZGrid {
         return get_integrals( positions, weights, domain.bounds, grid, func );
     }
 
-    // PD_TYPE boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
-    //     PD_TYPE res = 0;
-    //     find_radial_func( func, [&]( auto ft ) {
-    //         res = get_boundary_integral( grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
-    //     } );
-    //     return res;
-    // }
+    pybind11::array_t<PD_TYPE> integrals( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func ) {
+        return get_integrals( positions, weights, domain.bounds, grid, func );
+    }
 
-    // pybind11::array_t<PD_TYPE> der_boundary_integral( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
-    //     pybind11::array_t<PD_TYPE> res;
-    //     res.resize( { positions.shape( 0 ), positions.shape( 1 ) } );
-
-    //     find_radial_func( func, [&]( auto ft ) {
-    //         get_der_boundary_integral( reinterpret_cast<Pt *>( res.mutable_data() ), grid, domain.bounds, reinterpret_cast<const Pt *>( positions.data() ), reinterpret_cast<const TF *>( weights.data() ), positions.shape( 0 ), ft );
-    //     } );
-
-    //     return res;
-    // }
 
     pybind11::array_t<PD_TYPE> centroids( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
         return get_centroids( positions, weights, domain.bounds, grid, func );
@@ -435,6 +488,30 @@ struct PyPowerDiagramZGrid {
         auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
         auto ptr_weights = reinterpret_cast<const TF *>( weights.data() );
 
+        // output variable
+        std::ostringstream out;
+        out << "(function() {\n";
+
+        // diracs
+        out << "var diracs = [\n";
+        for( int n = 0; n < positions.shape( 0 ); ++n )
+            out << "    [" << ptr_positions[ n ][ 0 ] << ", " << ptr_positions[ n ][ 1 ] << "],\n";
+        out << "];\n";
+
+        // centroids
+        std::vector<Pt> c( positions.shape( 0 ) );
+        find_radial_func( func, [&]( auto ft ) {
+            sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
+                c[ num ] = centroid;
+            } );
+        } );
+
+        out << "var centroids = [\n";
+        for( int n = 0; n < positions.shape( 0 ); ++n )
+            out << "    [" << c[ n ][ 0 ] << ", " << c[ n ][ 1 ] << "],\n";
+        out << "];\n";
+
+        // get contributions for min/max and the path
         std::vector<Pt> min_pts( thread_pool.nb_threads(), Pt( + std::numeric_limits<TF>::max() ) );
         std::vector<Pt> max_pts( thread_pool.nb_threads(), Pt( - std::numeric_limits<TF>::max() ) );
         std::vector<std::ostringstream> os( thread_pool.nb_threads() );
@@ -458,7 +535,11 @@ struct PyPowerDiagramZGrid {
                 ft.need_ball_cut()
             );
         } );
+        out << "var path = new Path2D();\n";
+        for( std::ostringstream &o : os )
+            out << o.str();
 
+        // display min/max
         Pt min_pt = min_pts[ 0 ];
         Pt max_pt = max_pts[ 0 ];
         for( Pt &p : min_pts )
@@ -466,36 +547,15 @@ struct PyPowerDiagramZGrid {
         for( Pt &p : max_pts )
             max_pt = max( max_pt, p );
 
-        std::ostringstream &o = os.back();
-        o << "var min_x = " << min_pt[ 0 ] << ";\n";
-        o << "var min_y = " << min_pt[ 1 ] << ";\n";
-        o << "var max_x = " << max_pt[ 0 ] << ";\n";
-        o << "var max_y = " << max_pt[ 1 ] << ";\n";
+        out << "var min_x = " << min_pt[ 0 ] << ";\n";
+        out << "var min_y = " << min_pt[ 1 ] << ";\n";
+        out << "var max_x = " << max_pt[ 0 ] << ";\n";
+        out << "var max_y = " << max_pt[ 1 ] << ";\n";
 
-        o << "var diracs = [\n";
-        for( int n = 0; n < positions.shape( 0 ); ++n )
-            o << "    [" << ptr_positions[ n ][ 0 ] << ", " << ptr_positions[ n ][ 1 ] << "],\n";
-        o << "];\n";
-
-        std::vector<Pt> c( positions.shape( 0 ) );
-        find_radial_func( func, [&]( auto ft ) {
-            sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
-                c[ num ] = centroid;
-            } );
-        } );
-
-        o << "var centroids = [\n";
-        for( int n = 0; n < positions.shape( 0 ); ++n )
-            o << "    [" << c[ n ][ 0 ] << ", " << c[ n ][ 1 ] << "],\n";
-        o << "];\n";
-
-        std::string res;
-        for( std::ostringstream &o : os )
-            res += o.str();
-
-        return res;
+        out << "pd_list.push({ path, min_x, min_y, max_x, max_y, diracs, centroids });\n";
+        out << "})();\n";
+        return out.str();
     }
-
 
     void display_vtk_points( pybind11::array_t<PD_TYPE> &positions, const char *filename ) {
         sdot::VtkOutput<1> vtk_output( { "num" } );
@@ -626,8 +686,6 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( pybind11::init<int>()                                                                                                           , "" )
         .def( "update"                                              , &PowerDiagramZGrid::update                                              , "" )
         .def( "integrals"                                           , &PowerDiagramZGrid::integrals                                           , "" )
-        // .def( "boundary_integral"                                   , &PowerDiagramZGrid::boundary_integral                                   , "" )
-        // .def( "der_boundary_integral"                               , &PowerDiagramZGrid::der_boundary_integral                               , "" )
         .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights                           , "" )
         .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions, "" )
         .def( "centroids"                                           , &PowerDiagramZGrid::centroids                                           , "" )
@@ -636,10 +694,4 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( "display_vtk_points"                                  , &PowerDiagramZGrid::display_vtk_points                                  , "" )
         .def( "display_asy"                                         , &PowerDiagramZGrid::display_asy                                         , "" )
     ;
-
-    //    m.def( "display_asy"                  , &display_asy                   );
-    //    m.def( "display_vtk"                  , &display_vtk                   );
-    //    m.def( "get_centroids"                , &get_centroids                 );
-    //    m.def( "get_integrals"                , &get_integrals                 );
-    //    m.def( "get_der_integrals_wrt_weights", &get_der_integrals_wrt_weights );
 }

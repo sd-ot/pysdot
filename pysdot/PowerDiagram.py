@@ -143,19 +143,53 @@ class PowerDiagram:
 
     #
     def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True, disp_arrows=False):
-        inst = self._updated_grid()
-        path = inst.display_html_canvas(
-            self.positions,
-            self.weights,
-            self.domain._inst,
-            self.radial_func.name()
-        )
+        pd_list = """
+            var pd_list = [];
+        """.replace( "\n            ", "\n" )
+
+        # need to make an animation ?
+        if type( self.positions )==list or type( self.weights )==list:
+            ref_positions = self.positions
+            ref_weights = self.weights
+            for i in range( len( ref_positions ) ):
+                self.set_positions( ref_positions[ i ] )
+                self.set_weights( ref_weights )
+
+                inst = self._updated_grid()
+                pd_list += inst.display_html_canvas(
+                    self.positions,
+                    self.weights,
+                    self.domain._inst,
+                    self.radial_func.name()
+                )
+
+            self.set_positions( ref_positions )
+            self.set_weights( ref_weights )
+        else:
+            inst = self._updated_grid()
+            pd_list += inst.display_html_canvas(
+                self.positions,
+                self.weights,
+                self.domain._inst,
+                self.radial_func.name()
+            )
 
         jsct = """
             (function() {
             // geometry
-            var path = new Path2D();
-            __paths__
+            __pd_list__
+
+            // limits
+            var min_x = pd_list[ 0 ].min_x;
+            var min_y = pd_list[ 0 ].min_y;
+            var max_x = pd_list[ 0 ].max_x;
+            var max_y = pd_list[ 0 ].max_y;
+            for( var p of pd_list ) {
+                min_x = Math.min( p.min_x );
+                min_y = Math.min( p.min_y );
+                max_x = Math.max( p.max_x );
+                max_y = Math.max( p.max_y );
+            }
 
             // display parameters
             var disp_centroids = __disp_centroids__, disp_positions = __disp_positions__, disp_ids = __disp_ids__, disp_arrows = __disp_arrows__;
@@ -166,6 +200,7 @@ class PowerDiagram:
             var orig_click_y = 0;
             var pos_click_x = 0;
             var pos_click_y = 0;
+            var cur_pd = 0;
 
             // canvas
             var canvas = document.createElement( "canvas" );
@@ -192,20 +227,24 @@ class PowerDiagram:
                 ctx.setTransform( 1, 0, 0, 1, 0, 0 );
                 ctx.clearRect( 0, 0, w, h );
 
-                ctx.lineWidth = 1;
-                ctx.font = '16px serif';
-                ctx.strokeStyle = "#FF0000";
-                for( var i = 0; i < centroids.length; ++i ) {
-                    var px = ( centroids[ i ][ 0 ] - cx ) * s + 0.5 * w;
-                    var py = ( centroids[ i ][ 1 ] - cy ) * s + 0.5 * h;
-                    if ( disp_ids ) {
-                        ctx.fillText( String( i ), px + 5, py );
-                    }
+                var pd = pd_list[ cur_pd % pd_list.length ];
 
-                    if ( disp_centroids ) {
-                        ctx.beginPath();
-                        ctx.arc( px, py, 2, 0, 2 * Math.PI, true );
-                        ctx.stroke();
+                if ( disp_ids || disp_centroids ) {
+                    ctx.lineWidth = 1;
+                    ctx.font = '16px serif';
+                    ctx.strokeStyle = "#FF0000";
+                    for( var i = 0; i < pd.centroids.length; ++i ) {
+                        var px = ( pd.centroids[ i ][ 0 ] - cx ) * s + 0.5 * w;
+                        var py = ( pd.centroids[ i ][ 1 ] - cy ) * s + 0.5 * h;
+                        if ( disp_ids ) {
+                            ctx.fillText( String( i ), px + 5, py );
+                        }
+
+                        if ( disp_centroids ) {
+                            ctx.beginPath();
+                            ctx.arc( px, py, 2, 0, 2 * Math.PI, true );
+                            ctx.stroke();
+                        }
                     }
                 }
 
@@ -216,33 +255,40 @@ class PowerDiagram:
                 var c = 1.0 / s;
                 ctx.lineWidth = c;
                 ctx.strokeStyle = "#000000";
-                ctx.stroke( path );
+                ctx.stroke( pd.path );
 
                 ctx.strokeStyle = "#0000FF";
                 if ( disp_positions ) {
-                    for( var i = 0; i < diracs.length; ++i ) {
+                    for( var i = 0; i < pd.diracs.length; ++i ) {
                         ctx.beginPath();
-                        ctx.moveTo( diracs[ i ][ 0 ] - 4 * c, diracs[ i ][ 1 ] );
-                        ctx.lineTo( diracs[ i ][ 0 ] + 4 * c, diracs[ i ][ 1 ] );
+                        ctx.moveTo( pd.diracs[ i ][ 0 ] - 4 * c, pd.diracs[ i ][ 1 ] );
+                        ctx.lineTo( pd.diracs[ i ][ 0 ] + 4 * c, pd.diracs[ i ][ 1 ] );
                         ctx.stroke();
 
                         ctx.beginPath();
-                        ctx.moveTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] - 4 * c );
-                        ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] + 4 * c );
+                        ctx.moveTo( pd.diracs[ i ][ 0 ], pd.diracs[ i ][ 1 ] - 4 * c );
+                        ctx.lineTo( pd.diracs[ i ][ 0 ], pd.diracs[ i ][ 1 ] + 4 * c );
                         ctx.stroke();
                     }
                 }
 
                 ctx.strokeStyle = "#0000FF";
                 if ( disp_arrows ) {
-                    for( var i = 0; i < diracs.length; ++i ) {
+                    for( var i = 0; i < pd.diracs.length; ++i ) {
                         ctx.beginPath();
-                        ctx.moveTo( centroids[ i ][ 0 ], centroids[ i ][ 1 ] );
-                        ctx.lineTo( diracs[ i ][ 0 ], diracs[ i ][ 1 ] );
+                        ctx.moveTo( pd.centroids[ i ][ 0 ], pd.centroids[ i ][ 1 ] );
+                        ctx.lineTo( pd.diracs[ i ][ 0 ], pd.diracs[ i ][ 1 ] );
                         ctx.stroke();
                     }
                 }
+            }
 
+            function next_frame() {
+                if ( cur_pd + 1 < pd_list.length ) {
+                    setTimeout( next_frame, 50 );
+                    cur_pd += 1;
+                    draw();
+                }
             }
 
             canvas.addEventListener( "wheel", function( e ) {  
@@ -284,6 +330,17 @@ class PowerDiagram:
                 }
             } );
 
+            canvas.addEventListener( "mouseup", function( e ) {  
+                if ( pd_list.length > 1 && pos_click_x === e.x && pos_click_y == e.y ) {
+                    setTimeout( next_frame, 50 );
+                    cur_pd = 0;
+                    draw();
+                }
+            } );
+
+            if ( pd_list.length > 1 ) {
+                setTimeout( next_frame, 50 );
+            }
             draw();
             })();
         """
@@ -293,7 +350,7 @@ class PowerDiagram:
         jsct = jsct.replace( "__disp_positions__", str( 1 * disp_positions ) )
         jsct = jsct.replace( "__disp_arrows__", str( 1 * disp_arrows ) )
         jsct = jsct.replace( "__disp_ids__", str( 1 * disp_ids ) )
-        jsct = jsct.replace( "__paths__", path )
+        jsct = jsct.replace( "__pd_list__", pd_list )
 
         import IPython
         return IPython.display.Javascript( jsct )
