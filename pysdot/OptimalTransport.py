@@ -1,4 +1,4 @@
-# from .domain_types import ConvexPolyhedraAssembly
+from .domain_types import ConvexPolyhedraAssembly
 from .radial_funcs import RadialFuncEntropy
 from .radial_funcs import RadialFuncInBall
 from .radial_funcs import RadialFuncUnit
@@ -56,6 +56,11 @@ class OptimalTransport:
         if not ( initial_weights is None ):
             self.set_weights( initial_weights )
             
+        if self.pd.domain is None:
+            domain = ConvexPolyhedraAssembly()
+            domain.add_box([0, 0], [1, 1])
+            self.pd.set_domain( domain )
+
         if self.masses is None:
             if isinstance(self.pd.radial_func, RadialFuncUnit):
                 N = self.pd.positions.shape[0]

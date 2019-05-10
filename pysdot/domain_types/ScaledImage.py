@@ -6,8 +6,9 @@ import os
 #
 class ScaledImage:
     def __init__(self, min_pt, max_pt, img):
-        module = cpp_module.module_for_type_and_dim(np.float64, img.shape.length)
+        module = cpp_module.module_for_type_and_dim( np.float64, len( img.shape ) )
         self._inst = module.ScaledImage( min_pt, max_pt, img )
+        self._type = np.float64
 
     def measure(self):
         return self._inst.measure()
