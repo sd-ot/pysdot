@@ -601,13 +601,11 @@ namespace {
         }
 
         void display_asy( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &radial_func, const char *filename, const char *preamble, pybind11::array_t<PD_TYPE> &values, std::string colormap, double linewidth, double dotwidth, bool avoid_bounds, const char *closing, double min_rf, double max_rf ) {
-            auto buf_positions = positions.request();
-            auto buf_weights = weights.request();
-            auto buf_values = values.request();
-
-            auto ptr_positions = reinterpret_cast<const Pt *>( buf_positions.ptr );
-            auto ptr_weights = reinterpret_cast<const TF *>( buf_weights.ptr );
-            auto ptr_values = reinterpret_cast<const TF *>( buf_values.ptr );
+            auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
+            #if PD_DIM==2
+            auto ptr_weights = weights.data();
+            #endif
+            auto ptr_values = values.data();
 
             // vtk_output.save( filename );
             auto get_rgb = [&]( double &r, double &g, double &b, TF v ) {

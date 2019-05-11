@@ -19,7 +19,7 @@ import imageio
 # plt.imshow( img )
 # plt.show()
 
-t = np.linspace(-1,1,3)
+t = np.linspace(-1,1,50)
 x, y = np.meshgrid(t,t)
 img = np.exp( -2 * (x**2 + y**2) )
 img /= np.mean(img)
@@ -39,7 +39,7 @@ def quantization(ot, tau=.3, niter=10):
         ot.set_positions( ot.get_positions() + tau * ( B - ot.get_positions() ) )
     ot.adjust_weights()
 
-nd = 20
+nd = 100
 np.random.seed( 0 )
 
 ot = OptimalTransport()
