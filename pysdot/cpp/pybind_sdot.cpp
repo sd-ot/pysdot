@@ -467,7 +467,8 @@ namespace {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
-                            cp.display( vtk_output, { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ) } );
+                            if ( space_func.coeff )
+                                cp.display( vtk_output, { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ) } );
                         } );
                     },
                     domain.bounds.englobing_convex_polyhedron(),
@@ -543,12 +544,14 @@ namespace {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
-                            cp.display_html_canvas( os[ num_thread ], ptr_weights[ num_dirac_0 ] );
+                            if ( space_func.coeff ) {
+                                cp.display_html_canvas( os[ num_thread ], ptr_weights[ num_dirac_0 ] );
 
-                            cp.for_each_node( [&]( Pt v ) {
-                                min_pts[ num_thread ] = min( min_pts[ num_thread ], v );
-                                max_pts[ num_thread ] = max( max_pts[ num_thread ], v );
-                            } );
+                                cp.for_each_node( [&]( Pt v ) {
+                                    min_pts[ num_thread ] = min( min_pts[ num_thread ], v );
+                                    max_pts[ num_thread ] = max( max_pts[ num_thread ], v );
+                                } );
+                            }
                         } );
                     },
                     domain.bounds.englobing_convex_polyhedron(),
