@@ -4,11 +4,11 @@ cd pysdot/scripts/conda
 
 conda activate
 <!-- conda install anaconda anaconda-client conda-build -->
-conda install anaconda-client conda-build
-anaconda login
-
-conda build . --output --python=3.7
-anaconda upload --force -u sdot xxx.tar.bz2
+<!-- conda install anaconda-client conda-build -->
+<!-- anaconda login -->
+<!-- conda build . --output --python=3.7 -->
+anaconda upload --force -u sdot `conda build . --output --python=3.6`
+anaconda upload --force -u sdot `conda build . --output --python=3.7`
 
 --------- installation
 
