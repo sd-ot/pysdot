@@ -49,7 +49,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
 setup(
     name='pysdot',
-    version='0.1.post11',
+    version='0.1.post12',
     packages=find_packages(exclude=[
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'

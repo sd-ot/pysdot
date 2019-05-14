@@ -142,10 +142,13 @@ class PowerDiagram:
         )
 
     #
-    def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True, disp_arrows=False):
+    def display_jupyter(self, disp_centroids=True, disp_positions=True, disp_ids=True, disp_arrows=False, hide_after=-1):
         pd_list = """
             var pd_list = [];
         """.replace( "\n            ", "\n" )
+
+        if hide_after == None:
+            hide_after = 1e40
 
         # need to make an animation ?
         if type( self.positions )==list or type( self.weights )==list:
@@ -162,7 +165,8 @@ class PowerDiagram:
                     self.positions,
                     self.weights,
                     self.domain._inst,
-                    self.radial_func.name()
+                    self.radial_func.name(),
+                    hide_after
                 )
 
             self.set_positions( ref_positions )
@@ -173,7 +177,8 @@ class PowerDiagram:
                 self.positions,
                 self.weights,
                 self.domain._inst,
-                self.radial_func.name()
+                self.radial_func.name(),
+                hide_after
             )
 
         jsct = """

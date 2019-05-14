@@ -3,10 +3,11 @@ git clone http://github.com/sd-ot/pysdot.git
 cd pysdot/scripts/conda
 
 conda activate
-conda install anaconda anaconda-client conda-build
+<!-- conda install anaconda anaconda-client conda-build -->
+conda install anaconda-client conda-build
+anaconda login
 
 conda build . --output --python=3.7
-anaconda login
 anaconda upload --force -u sdot xxx.tar.bz2
 
 --------- installation

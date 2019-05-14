@@ -509,7 +509,8 @@ namespace {
         }
 
         template<class Domain>
-        std::string display_html_canvas( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const std::string &func ) {
+        std::string display_html_canvas( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const std::string &func, int hide_after ) {
+            std::size_t nd = hide_after >= 0 ? std::min( hide_after, int( positions.shape( 0 ) ) ) : positions.shape( 0 );
             auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
             auto ptr_weights = reinterpret_cast<const TF *>( weights.data() );
 
@@ -519,7 +520,7 @@ namespace {
 
             // diracs
             out << "var diracs = [\n";
-            for( int n = 0; n < positions.shape( 0 ); ++n )
+            for( std::size_t n = 0; n < nd; ++n )
                 out << "    [" << ptr_positions[ n ][ 0 ] << ", " << ptr_positions[ n ][ 1 ] << "],\n";
             out << "];\n";
 
@@ -532,7 +533,7 @@ namespace {
             } );
 
             out << "var centroids = [\n";
-            for( int n = 0; n < positions.shape( 0 ); ++n )
+            for( std::size_t n = 0; n < nd; ++n )
                 out << "    [" << c[ n ][ 0 ] << ", " << c[ n ][ 1 ] << "],\n";
             out << "];\n";
 
@@ -546,8 +547,10 @@ namespace {
                     [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
                             if ( space_func.coeff ) {
-                                cp.display_html_canvas( os_int[ num_thread ], ptr_weights[ num_dirac_0 ], 0 );
-                                cp.display_html_canvas( os_ext[ num_thread ], ptr_weights[ num_dirac_0 ], 1 );
+                                if ( num_dirac_0 < nd ) {
+                                    cp.display_html_canvas( os_int[ num_thread ], ptr_weights[ num_dirac_0 ], 0 );
+                                    cp.display_html_canvas( os_ext[ num_thread ], ptr_weights[ num_dirac_0 ], 1 );
+                                }
 
                                 cp.for_each_node( [&]( Pt v ) {
                                     min_pts[ num_thread ] = min( min_pts[ num_thread ], v );
@@ -590,12 +593,12 @@ namespace {
             return out.str();
         }
 
-        std::string display_html_canvas_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
-            return display_html_canvas( positions, weights, domain, func );
+        std::string display_html_canvas_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, int hide_after ) {
+            return display_html_canvas( positions, weights, domain, func, hide_after );
         }
 
-        std::string display_html_canvas_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func ) {
-            return display_html_canvas( positions, weights, domain, func );
+        std::string display_html_canvas_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, int hide_after ) {
+            return display_html_canvas( positions, weights, domain, func, hide_after );
         }
 
         void display_vtk_points( pybind11::array_t<PD_TYPE> &positions, const char *filename ) {

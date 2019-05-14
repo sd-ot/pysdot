@@ -51,7 +51,7 @@ ot.verbosity = True
 ot.max_iter = 1000
 
 # solve
-quantization(ot, 0.3, 10)
+quantization(ot, 0.1, 10)
 
 # display
 ot.pd.display_vtk( "results/pd.vtk", centroids=True )
