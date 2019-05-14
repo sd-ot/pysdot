@@ -351,8 +351,8 @@ namespace {
         TB bounds;
     };
 
+    #define PyPowerDiagramZGrid PyPowerDiagramZGrid_##PD_DIM
 
-    // template<int dim,class TF>
     struct PyPowerDiagramZGrid {
         using Grid = sdot::SpZGrid<PyPc>;
         using Pt   = typename Grid::Pt;

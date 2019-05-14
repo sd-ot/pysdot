@@ -12,10 +12,10 @@ if 'darwin' in sys.platform:
     extra_compile_args.append("-std=c++14")
     extra_compile_args.append("-stdlib=libc++")
     extra_compile_args.append("-Wno-missing-braces")
-    extra_compile_args.append("-march=nocona")
+    # extra_compile_args.append("-march=nocona")
     extra_compile_args.append("-ffast-math")
 if 'linux' in sys.platform:
-    extra_compile_args.append("-march=nocona")
+    # extra_compile_args.append("-march=nocona")
     extra_compile_args.append("-ffast-math")
 
 ext_modules = []
@@ -49,7 +49,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
 setup(
     name='pysdot',
-    version='0.1.post12',
+    version='0.2',
     packages=find_packages(exclude=[
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'
