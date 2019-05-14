@@ -152,8 +152,10 @@ class PowerDiagram:
             ref_positions = self.positions
             ref_weights = self.weights
             for i in range( len( ref_positions ) ):
-                self.set_positions( ref_positions[ i ] )
-                self.set_weights( ref_weights )
+                if type( ref_positions )==list:
+                    self.set_positions( ref_positions[ i ] )
+                if type( ref_weights )==list:
+                    self.set_weights( ref_weights[ i ] )
 
                 inst = self._updated_grid()
                 pd_list += inst.display_html_canvas(
@@ -185,10 +187,10 @@ class PowerDiagram:
             var max_x = pd_list[ 0 ].max_x;
             var max_y = pd_list[ 0 ].max_y;
             for( var p of pd_list ) {
-                min_x = Math.min( p.min_x );
-                min_y = Math.min( p.min_y );
-                max_x = Math.max( p.max_x );
-                max_y = Math.max( p.max_y );
+                min_x = Math.min( min_x, p.min_x );
+                min_y = Math.min( min_y, p.min_y );
+                max_x = Math.max( max_x, p.max_x );
+                max_y = Math.max( max_y, p.max_y );
             }
 
             // display parameters
@@ -255,7 +257,9 @@ class PowerDiagram:
                 var c = 1.0 / s;
                 ctx.lineWidth = c;
                 ctx.strokeStyle = "#000000";
-                ctx.stroke( pd.path );
+                ctx.stroke( pd.path_int );
+                ctx.strokeStyle = "rgb(0,0,0,0.2)";
+                ctx.stroke( pd.path_ext );
 
                 ctx.strokeStyle = "#0000FF";
                 if ( disp_positions ) {
@@ -280,6 +284,13 @@ class PowerDiagram:
                         ctx.lineTo( pd.diracs[ i ][ 0 ], pd.diracs[ i ][ 1 ] );
                         ctx.stroke();
                     }
+                }
+
+                if ( pd_list.length > 1 && cur_pd + 1 == pd_list.length ) {
+                    ctx.setTransform( 1, 0, 0, 1, 0, 0 );
+                    ctx.font = '16px serif';
+                    ctx.strokeStyle = "#FF0000";
+                    ctx.fillText( "left click to replay the animation", 10, h - 5 );
                 }
             }
 
@@ -331,7 +342,7 @@ class PowerDiagram:
             } );
 
             canvas.addEventListener( "mouseup", function( e ) {  
-                if ( pd_list.length > 1 && pos_click_x === e.x && pos_click_y == e.y ) {
+                if ( pd_list.length > 1 && orig_click_x === e.x && orig_click_y == e.y ) {
                     setTimeout( next_frame, 50 );
                     cur_pd = 0;
                     draw();

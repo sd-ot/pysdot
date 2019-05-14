@@ -114,6 +114,7 @@ class OptimalTransport:
             nx = np.max(np.abs(x))
             if self.verbosity:
                 print("max dw:", nx)
+            self.delta_w.append(nx)
 
             if nx < self.obj_max_dw:
                 break

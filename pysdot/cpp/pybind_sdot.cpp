@@ -539,13 +539,15 @@ namespace {
             // get contributions for min/max and the path
             std::vector<Pt> min_pts( thread_pool.nb_threads(), Pt( + std::numeric_limits<TF>::max() ) );
             std::vector<Pt> max_pts( thread_pool.nb_threads(), Pt( - std::numeric_limits<TF>::max() ) );
-            std::vector<std::ostringstream> os( thread_pool.nb_threads() );
+            std::vector<std::ostringstream> os_int( thread_pool.nb_threads() );
+            std::vector<std::ostringstream> os_ext( thread_pool.nb_threads() );
             find_radial_func( func, [&]( auto ft ) {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
                             if ( space_func.coeff ) {
-                                cp.display_html_canvas( os[ num_thread ], ptr_weights[ num_dirac_0 ] );
+                                cp.display_html_canvas( os_int[ num_thread ], ptr_weights[ num_dirac_0 ], 0 );
+                                cp.display_html_canvas( os_ext[ num_thread ], ptr_weights[ num_dirac_0 ], 1 );
 
                                 cp.for_each_node( [&]( Pt v ) {
                                     min_pts[ num_thread ] = min( min_pts[ num_thread ], v );
@@ -562,8 +564,12 @@ namespace {
                     ft.need_ball_cut()
                 );
             } );
-            out << "var path = new Path2D();\n";
-            for( std::ostringstream &o : os )
+            out << "var path_int = new Path2D();\n";
+            for( std::ostringstream &o : os_int )
+                out << o.str();
+
+            out << "var path_ext = new Path2D();\n";
+            for( std::ostringstream &o : os_ext )
                 out << o.str();
 
             // display min/max
@@ -579,7 +585,7 @@ namespace {
             out << "var max_x = " << max_pt[ 0 ] << ";\n";
             out << "var max_y = " << max_pt[ 1 ] << ";\n";
 
-            out << "pd_list.push({ path, min_x, min_y, max_x, max_y, diracs, centroids });\n";
+            out << "pd_list.push({ path_int, path_ext, min_x, min_y, max_x, max_y, diracs, centroids });\n";
             out << "})();\n";
             return out.str();
         }
