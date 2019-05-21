@@ -55,6 +55,15 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
+    def second_order_moments(self):
+        inst = self._updated_grid()
+        return inst.integrals(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.second_order_moment_name()
+        )
+
     def centroids(self):
         inst = self._updated_grid()
         return inst.centroids(

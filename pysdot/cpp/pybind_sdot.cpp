@@ -53,6 +53,11 @@ namespace {
             return;
         }
 
+        if ( func == "r**2*in_ball(weight**0.5)" || func == "r^2*in_ball(weight**0.5)" ) {
+            fu( sdot::FunctionEnum::R2InBallW05() );
+            return;
+        }
+
         throw pybind11::value_error( "unknown function type" );
     }
 

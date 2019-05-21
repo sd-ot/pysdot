@@ -1,3 +1,5 @@
+
+
 #
 class RadialFuncInBall:
     def name(self):
@@ -5,3 +7,6 @@ class RadialFuncInBall:
 
     def need_rb_corr(self):
         return False
+
+    def second_order_moment_name(self):
+        return "r^2*in_ball(weight**0.5)"
