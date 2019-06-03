@@ -55,6 +55,18 @@ class PowerDiagram:
             self.radial_func.name()
         )
 
+    def image_integrals(self, min_pos, max_pos, dimensions):
+        inst = self._updated_grid()
+        return inst.image_integrals(
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name(),
+            min_pos,
+            max_pos,
+            dimensions
+        )
+
     def second_order_moments(self):
         inst = self._updated_grid()
         return inst.integrals(

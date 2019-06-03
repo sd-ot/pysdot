@@ -13,6 +13,7 @@
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_integrals_wrt_weights.h"
 // #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_boundary_integral.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_boundary_integral.h"
+#include "../../ext/sdot/src/sdot/PowerDiagram/get_image_integrals.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_integrals.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_centroids.h"
 
@@ -63,11 +64,8 @@ namespace {
 
     template<class Domain,class Grid>
     pybind11::array_t<TF> get_integrals( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const std::string &func ) {
-        auto buf_positions = positions.request();
-        auto buf_weights = weights.request();
-
-        auto ptr_positions = reinterpret_cast<const typename Grid::Pt *>( buf_positions.ptr );
-        auto ptr_weights = reinterpret_cast<const typename Grid::TF *>( buf_weights.ptr );
+        auto ptr_positions = reinterpret_cast<const typename Grid::Pt *>( positions.data() );
+        auto ptr_weights = reinterpret_cast<const typename Grid::TF *>( weights.data() );
 
         pybind11::array_t<TF> res;
         res.resize( { positions.shape( 0 ) } );
@@ -76,6 +74,40 @@ namespace {
 
         find_radial_func( func, [&]( auto ft ) {
             sdot::get_integrals( ptr_res, grid, domain, ptr_positions, ptr_weights, positions.shape( 0 ), ft );
+        } );
+
+        return res;
+    }
+
+    template<class Domain,class Grid>
+    pybind11::array_t<TF> get_image_integrals( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const std::string &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nbp ) {
+        auto ptr_positions = reinterpret_cast<const typename Grid::Pt *>( positions.data() );
+        auto ptr_weights = reinterpret_cast<const typename Grid::TF *>( weights.data() );
+        auto ptr_nbp = reinterpret_cast<const std::size_t *>( nbp.data() );
+        auto ptr_beg = reinterpret_cast<const TF *>( beg.data() );
+        auto ptr_end = reinterpret_cast<const TF *>( end.data() );
+        using Pt = typename Grid::Pt;
+        using ST = std::size_t;
+
+        Pt a_beg;
+        Pt a_end;
+        std::array<ST,Grid::dim> a_nbp;
+        for( int d = 0; d < Grid::dim; ++d ) {
+            a_beg[ d ] = ptr_beg[ Grid::dim - 1 - d ];
+            a_end[ d ] = ptr_end[ Grid::dim - 1 - d ];
+            a_nbp[ d ] = ptr_nbp[ Grid::dim - 1 - d ];
+        }
+
+        std::array<std::size_t,Grid::dim+1> shape;
+        for( int d = 0; d < Grid::dim; ++d )
+            shape[ d ] = a_nbp[ d ];
+        shape[ Grid::dim ] = Grid::dim + 1;
+
+        pybind11::array_t<TF> res;
+        res.resize( shape );
+
+        find_radial_func( func, [&]( auto ft ) {
+            sdot::get_image_integrals( res.mutable_data(), grid, domain, ptr_positions, ptr_weights, positions.shape( 0 ), ft, a_beg, a_end, a_nbp );
         } );
 
         return res;
@@ -387,6 +419,14 @@ namespace {
 
         pybind11::array_t<PD_TYPE> integrals_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func ) {
             return get_integrals( positions, weights, domain.bounds, grid, func );
+        }
+
+        pybind11::array_t<PD_TYPE> image_integrals_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nb_pixels ) {
+            return get_image_integrals( positions, weights, domain.bounds, grid, func, beg, end, nb_pixels );
+        }
+
+        pybind11::array_t<PD_TYPE> image_integrals_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nb_pixels ) {
+            return get_image_integrals( positions, weights, domain.bounds, grid, func, beg, end, nb_pixels );
         }
 
         pybind11::array_t<PD_TYPE> centroids_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
@@ -745,6 +785,8 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( "update"                                              , &PowerDiagramZGrid::update                                              , "" )
         .def( "integrals"                                           , &PowerDiagramZGrid::integrals_acp                                       , "" )
         .def( "integrals"                                           , &PowerDiagramZGrid::integrals_img                                       , "" )
+        .def( "image_integrals"                                     , &PowerDiagramZGrid::image_integrals_acp                                 , "" )
+        .def( "image_integrals"                                     , &PowerDiagramZGrid::image_integrals_img                                 , "" )
         .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_acp                       , "" )
         .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_img                       , "" )
         .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions, "" )

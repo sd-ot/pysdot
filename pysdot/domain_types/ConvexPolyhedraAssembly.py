@@ -49,6 +49,8 @@ class ConvexPolyhedraAssembly:
         
         for i in range(1, len(dimensions)):
             assert(dimensions[i] == dimensions[0])
+            
+        self.dimension = dimensions[0]
 
         module = cpp_module.module_for_type_and_dim(self._type, dimensions[0])
         self._inst = module.ConvexPolyhedraAssembly()

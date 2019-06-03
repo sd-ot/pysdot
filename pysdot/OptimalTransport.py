@@ -12,12 +12,11 @@ def dist(a, b):
 
 
 class OptimalTransport:
-    def __init__(self, positions=None, weights=None, domain=None, radial_func=RadialFuncUnit(),
+    def __init__(self, positions=None, weights=None, domain=None, masses=None, radial_func=RadialFuncUnit(),
                  obj_max_dw=1e-8, linear_solver="Petsc"):
         self.pd = PowerDiagram(positions, weights, domain, radial_func)
         self.obj_max_dw = obj_max_dw
-
-        self.masses = None
+        self.masses = masses
 
         self.linear_solver = linear_solver
         self.verbosity = 0
