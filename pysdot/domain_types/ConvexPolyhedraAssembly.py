@@ -46,10 +46,9 @@ class ConvexPolyhedraAssembly:
     def _update_inst(self, dimensions):
         if self._inst:
             return self._inst
-        
+
         for i in range(1, len(dimensions)):
             assert(dimensions[i] == dimensions[0])
-            
         self.dimension = dimensions[0]
 
         module = cpp_module.module_for_type_and_dim(self._type, dimensions[0])

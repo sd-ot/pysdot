@@ -57,7 +57,10 @@ class OptimalTransport:
             
         if self.pd.domain is None:
             domain = ConvexPolyhedraAssembly()
-            domain.add_box([0, 0], [1, 1])
+            if self.pd.positions.shape[ 1 ] == 2:
+                domain.add_box([0, 0], [1, 1])
+            else:
+                domain.add_box([0, 0, 0], [1, 1, 1])
             self.pd.set_domain( domain )
 
         if self.masses is None:

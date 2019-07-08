@@ -4,6 +4,10 @@
 #include "../../ext/sdot/src/sdot/Support/Assert.cpp"
 #include "../../ext/sdot/src/sdot/Support/Mpi.cpp"
 
+#ifdef PD_WANT_STAT
+#include "../../ext/sdot/src/sdot/Support/Stat.cpp"
+#endif
+
 #include "../../ext/sdot/src/sdot/Domains/ConvexPolyhedronAssembly.h"
 #include "../../ext/sdot/src/sdot/Domains/ScaledImage.h"
 
@@ -12,6 +16,7 @@
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_centroids_and_integrals_wrt_weight_and_positions.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_integrals_wrt_weights.h"
 // #include "../../ext/sdot/src/sdot/PowerDiagram/get_der_boundary_integral.h"
+#include "../../ext/sdot/src/sdot/PowerDiagram/get_distances_from_boundaries.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_boundary_integral.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_image_integrals.h"
 #include "../../ext/sdot/src/sdot/PowerDiagram/get_integrals.h"
@@ -470,6 +475,30 @@ namespace {
         PyDerResult<dim,TF> der_integrals_wrt_weights_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, bool stop_if_void ) {
             return der_integrals_wrt_weights( positions, weights, domain, func, stop_if_void );
         }   
+
+        template<class Domain>
+        pybind11::array_t<TF> distances_from_boundaries( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const std::string &func, bool count_domain_boundaries ) {
+            auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
+            auto ptr_points = reinterpret_cast<const Pt *>( points.data() );
+            auto ptr_weights = weights.data();
+
+            pybind11::array_t<PD_TYPE> res;
+            res.resize( { points.shape( 0 ) } );
+
+            find_radial_func( func, [&]( auto ft ) {
+                sdot::get_distances_from_boundaries( res.mutable_data(), ptr_points, std::size_t( points.shape( 0 ) ), grid, domain.bounds, ptr_positions, ptr_weights, std::size_t( positions.shape( 0 ) ), ft, count_domain_boundaries );
+            } );
+
+            return res;
+        }
+
+        pybind11::array_t<TF> distances_from_boundaries_acp( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, bool count_domain_boundaries ) {
+            return distances_from_boundaries( points, positions, weights, domain, func, count_domain_boundaries );
+        }   
+
+        pybind11::array_t<TF> distances_from_boundaries_img(  pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, bool count_domain_boundaries ) {
+            return distances_from_boundaries( points, positions, weights, domain, func, count_domain_boundaries );
+        }   
     
         PyDerResult<dim,TF> der_centroids_and_integrals_wrt_weight_and_positions( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
             auto buf_positions = positions.request();
@@ -790,6 +819,8 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
         .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_acp                       , "" )
         .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_img                       , "" )
         .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions, "" )
+        .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_acp                       , "" )
+        .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_img                       , "" )
         .def( "centroids"                                           , &PowerDiagramZGrid::centroids_acp                                       , "" )
         .def( "centroids"                                           , &PowerDiagramZGrid::centroids_img                                       , "" )
         .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk_acp                                     , "" )

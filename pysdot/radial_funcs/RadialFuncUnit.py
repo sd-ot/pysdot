@@ -5,3 +5,6 @@ class RadialFuncUnit:
 
     def need_rb_corr(self):
         return True
+
+    def second_order_moment_name(self):
+        return "r^2"

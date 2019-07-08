@@ -21,7 +21,7 @@ class PowerDiagram:
         if not ( domain is None ):
             self.set_domain( domain )
         if not ( positions is None ):
-            self.set_positions( positions )
+            self.set_positions( positions ) 
         if not ( weights is None ):
             self.set_weights( weights )
 
@@ -83,6 +83,17 @@ class PowerDiagram:
             self.weights,
             self.domain._inst,
             self.radial_func.name()
+        )
+
+    def distances_from_boundaries(self, points, count_domain_boundaries=False):
+        inst = self._updated_grid()
+        return inst.distances_from_boundaries(
+            points,
+            self.positions,
+            self.weights,
+            self.domain._inst,
+            self.radial_func.name(),
+            count_domain_boundaries
         )
 
     def der_integrals_wrt_weights(self, stop_if_void=False):
@@ -399,7 +410,10 @@ class PowerDiagram:
 
         if self.domain is None:
             domain = ConvexPolyhedraAssembly()
-            domain.add_box([0, 0], [1, 1])
+            if self.positions.shape[ 1 ] == 2:
+                domain.add_box([0, 0], [1, 1])
+            else:
+                domain.add_box([0, 0, 0], [1, 1, 1])
             self.set_domain( domain )
 
         if self.weights is None:

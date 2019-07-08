@@ -27,6 +27,7 @@ for TF in ["double"]:
             sources=['pysdot/cpp/pybind_sdot.cpp'],
             include_dirs=['ext','ext/pybind11/include/'],
             define_macros=[
+                # ('PD_WANT_STAT', ""),
                 ('PD_MODULE_NAME', name),
                 ('PD_TYPE', TF),
                 ('PD_DIM', str(dim))
