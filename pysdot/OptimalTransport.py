@@ -13,13 +13,13 @@ def dist(a, b):
 
 class OptimalTransport:
     def __init__(self, positions=None, weights=None, domain=None, masses=None, radial_func=RadialFuncUnit(),
-                 obj_max_dw=1e-8, linear_solver="Petsc"):
+                 obj_max_dw=1e-8, linear_solver="Petsc", verbosity=0):
         self.pd = PowerDiagram(positions, weights, domain, radial_func)
         self.obj_max_dw = obj_max_dw
         self.masses = masses
-
+        
         self.linear_solver = linear_solver
-        self.verbosity = 0
+        self.verbosity = verbosity
         self.max_iter = 1000
         self.delta_w = []
 
@@ -87,7 +87,7 @@ class OptimalTransport:
                 )
                 if ret_if_err:
                     return True
-                if self.verbosity:
+                if (self.verbosity > 1):
                     print("bim (going back)")
                 continue
             old_weights = self.pd.weights
@@ -114,7 +114,7 @@ class OptimalTransport:
             self.pd.set_weights(self.pd.get_weights() - relax * x)
 
             nx = np.max(np.abs(x))
-            if self.verbosity:
+            if (self.verbosity > 1):
                 print("max dw:", nx)
             self.delta_w.append(nx)
 
@@ -139,14 +139,26 @@ class OptimalTransport:
         return self.pd.positions.shape[1]
 
     def _get_linear_solver(self):
-        if self._linear_solver_inst is None:
+        if (self._linear_solver_inst is not None):
+            return self._linear_solver_inst
+        
+        sparse_linear_solvers = ('CuPyx', 'Petsc', 'Scipy')
+        msg = 'Available solvers are: {}.'.format(', '.join(sparse_linear_solvers))
+        assert self.linear_solver in sparse_linear_solvers, msg
+
+        for solver in (self.linear_solver,)+sparse_linear_solvers:
             try:
-                mod = importlib.import_module(
-                    'pysdot.solvers.{}'.format(self.linear_solver)
-                )
-            except:
-                mod = importlib.import_module(
-                    'pysdot.solvers.Scipy'
-                )
-            self._linear_solver_inst = mod.Solver()
+                module = importlib.import_module('pysdot.solvers.{}'.format(solver))
+                break
+            except ImportError:
+                continue
+        else:
+            msg='Could not import any of the solver modules.'
+            raise ImportError(msg)
+
+        if (self.verbosity > 0):
+            print('Sucessfully imported sparse linear solver {}.'.format(solver))
+
+        self._linear_solver_inst = module.Solver()
         return self._linear_solver_inst
+
