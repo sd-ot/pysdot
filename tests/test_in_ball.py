@@ -19,12 +19,12 @@ img = pd.image_integrals( [ 0, 0 ], [ 1, 1 ], [ 100, 100 ] )
 img[ :, :, 0 ] *= 1e4
 img[ :, :, 1 ] *= 1e4
 
-for d in range( 3 ):
-    plt.subplot( 1, 3, d + 1 )
-    plt.imshow( img[ :, :, d ] )
-    plt.colorbar()
+# for d in range( 3 ):
+#     plt.subplot( 1, 3, d + 1 )
+#     plt.imshow( img[ :, :, d ] )
+#     plt.colorbar()
 
-plt.show()
+# plt.show()
 
 # w = 0.1
 

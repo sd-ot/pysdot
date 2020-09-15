@@ -1,10 +1,10 @@
 #
-class RadialFuncInBall:
+class RadialFuncPpWmR2:
     def name(self):
-        return "in_ball(weight**0.5)"
+        return "pos_part(w-r**2)"
 
     def need_rb_corr(self):
         return False
 
     def second_order_moment_name(self):
-        return "r^2*in_ball(weight**0.5)"
+        return "r^2*pos_part(w-r**2)"

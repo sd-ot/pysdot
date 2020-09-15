@@ -54,6 +54,11 @@ namespace {
             return;
         }
 
+        if ( func == "pos_part(w-r**2)" || func == "pos_part(w-r^2)" ) {
+            fu( sdot::FunctionEnum::PpWmR2() );
+            return;
+        }
+
         if ( func == "in_ball(weight**0.5)" ) {
             fu( sdot::FunctionEnum::InBallW05() );
             return;

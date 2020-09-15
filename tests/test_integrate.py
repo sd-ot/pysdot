@@ -13,7 +13,7 @@ class TestIntegrate_2D(unittest.TestCase):
     def test_sum_area(self, nb_diracs=100):
         for _ in range(10):
             # diracs
-            pd = PowerDiagram(self.domain)
+            pd = PowerDiagram(domain=self.domain)
             pd.set_positions(np.random.rand(nb_diracs, 2))
             pd.set_weights(np.ones(nb_diracs))
 
@@ -22,7 +22,7 @@ class TestIntegrate_2D(unittest.TestCase):
             self.assertAlmostEqual(np.sum(areas), 1.0)
 
     def test_unit(self):
-        pd = PowerDiagram(self.domain)
+        pd = PowerDiagram(domain=self.domain)
         pd.set_positions([[0.0, 0.0]])
         pd.set_weights([0.0])
 
@@ -72,7 +72,7 @@ class TestIntegrate_3D(unittest.TestCase):
     def test_sum_area(self, nb_diracs=100):
         for _ in range(10):
             # diracs
-            pd = PowerDiagram(self.domain)
+            pd = PowerDiagram(domain=self.domain)
             pd.set_positions(np.random.rand(nb_diracs, 3))
             pd.set_weights(np.ones(nb_diracs))
 
@@ -81,7 +81,7 @@ class TestIntegrate_3D(unittest.TestCase):
             self.assertAlmostEqual(np.sum(areas), 1.0)
 
     def test_unit(self):
-        pd = PowerDiagram(self.domain)
+        pd = PowerDiagram(domain=self.domain)
         pd.set_positions([[0.0, 0.0, 0.0]])
         pd.set_weights([0.0])
 
