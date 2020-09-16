@@ -1,10 +1,12 @@
-all: comp
+all: install
 
 comp:
 	test -e ext/sdot || git clone git@github.com:sd-ot/sdot.git ext/sdot
+	rm -rf build/ 2> /dev/null
 	python3 setup.py build
-	python3 setup.py install --user 
 
+install: comp
+	python3 setup.py install --user 
 	
 test:
 	python -m unittest discover tests
