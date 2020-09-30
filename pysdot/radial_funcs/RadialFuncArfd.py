@@ -14,6 +14,9 @@ class RadialFuncArfd:
     def second_order_moment_name(self):
         return ""
 
+    def nb_polynomials( self ):
+        return self.func.nb_polynomials()
+
     def ball_cut( self ):
         return False
         

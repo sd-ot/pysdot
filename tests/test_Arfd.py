@@ -5,27 +5,32 @@ from pysdot import PowerDiagram
 import numpy as np
 import unittest
 
-def ra( r ):
-    print( r )
-    return ( 1 - r * r ) * ( r < 1 )
+class TestArfd_2D(unittest.TestCase):
+    def test_integrals(self):
+        rf = RadialFuncArfd(
+            lambda r: ( 1 - r * r ) * ( r < 1 ), # value
+            lambda w: 1 / w**0.5, # input (radius) scaling
+            lambda w: w, # output scaling
+            [ 1 ] # stops (radii value where we may have discontinuities)
+        )
 
-rf = RadialFuncArfd(
-    ra, # lambda r: ( 1 - r * r ) * ( r < 1 ),
-    lambda w: 1 / w**0.5,
-    lambda w: w,
-    [ 1 ]
-)
+        # should use only 2 polynomials
+        self.assertEqual(rf.nb_polynomials(), 2)
 
-domain = ConvexPolyhedraAssembly()
-domain.add_box([0.0, 0.0], [2.0, 1.0])
+        # set up a domain, with only 1 dirac
+        domain = ConvexPolyhedraAssembly()
+        domain.add_box([0.0, 0.0], [2.0, 1.0])
 
-pd = PowerDiagram(domain=domain, radial_func=rf)
-pd.set_positions(np.array([[1.0, 0.0], [50.0, 50.0]]))
-pd.set_weights(np.array([10, 1e-6]))
+        pd = PowerDiagram(domain=domain, radial_func=rf)
+        pd.set_positions(np.array([[0.0, 0.0]]))
 
-# integrals
-ig = pd.integrals()
-print( ig )
+        # test integration values
+        for ( w, r ) in [ ( 0.5, np.pi/32 ), ( 1, np.pi/8 ), ( 10, 50/3 ), ( 100, 590/3 ) ]:
+            pd.set_weights(np.array([w]))
+            ig = pd.integrals()
+            self.assertAlmostEqual(ig[ 0 ], r)
+
+
 
 # class TestPpWmR2_2D(unittest.TestCase):
 #     def setUp(self):

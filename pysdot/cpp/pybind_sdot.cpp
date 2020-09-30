@@ -27,6 +27,7 @@
 #include "../../ext/sdot/src/sdot/Display/VtkOutput.h"
 #include "inferno_color_map.h"
 
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
@@ -83,6 +84,7 @@ namespace {
 
     template<class RF,class FU>
     void find_radial_func( const RF &func, const FU &fu ) {
+        pybind11::gil_scoped_release release{};
         fu( func );
     }
 
