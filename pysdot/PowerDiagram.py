@@ -439,7 +439,7 @@ class PowerDiagram:
             self.weights,
             self._positions_are_new or self._domain_is_new,
             self._weights_are_new or self._domain_is_new,
-            self.radial_func.name()
+            self.radial_func.ball_cut()
         )
         self._positions_are_new = False
         self._weights_are_new = False

@@ -9,3 +9,5 @@ class RadialFuncEntropy:
     def need_rb_corr(self):
         return False
         
+    def ball_cut( self ):
+        return False

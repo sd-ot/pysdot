@@ -4,6 +4,8 @@
 #include "../../ext/sdot/src/sdot/Support/Assert.cpp"
 #include "../../ext/sdot/src/sdot/Support/Mpi.cpp"
 
+#include "../../ext/sdot/src/sdot/Integration/Arfd.cpp"
+
 #ifdef PD_WANT_STAT
 #include "../../ext/sdot/src/sdot/Support/Stat.cpp"
 #endif
@@ -37,43 +39,55 @@ namespace {
     template<class FU>
     void find_radial_func( const std::string &func, const FU &fu ) {
         if ( func == "1" || func == "unit" ) {
-            fu( sdot::FunctionEnum::Unit() );
+            sdot::FunctionEnum::Unit f;
+            fu( f );
             return;
         }
 
         if ( func.size() > 13 && func.substr( 0, 13 ) == "exp((w-r**2)/" ) {
             PD_TYPE eps;
             std::istringstream is( func.substr( 13, func.size() - 14 ) );
+
             is >> eps;
-            fu( sdot::FunctionEnum::ExpWmR2db<PD_TYPE>{ eps } );
+            sdot::FunctionEnum::ExpWmR2db<PD_TYPE> f{ eps };
+            fu( f );
             return;
         }
 
         if ( func == "r**2" || func == "r^2" ) {
-            fu( sdot::FunctionEnum::R2() );
+            sdot::FunctionEnum::R2 f;
+            fu( f );
             return;
         }
 
         if ( func == "pos_part(w-r**2)" || func == "pos_part(w-r^2)" ) {
-            fu( sdot::FunctionEnum::PpWmR2() );
+            sdot::FunctionEnum::PpWmR2 f;
+            fu( f );
             return;
         }
 
         if ( func == "in_ball(weight**0.5)" ) {
-            fu( sdot::FunctionEnum::InBallW05() );
+            sdot::FunctionEnum::InBallW05 f;
+            fu( f );
             return;
         }
 
         if ( func == "r**2*in_ball(weight**0.5)" || func == "r^2*in_ball(weight**0.5)" ) {
-            fu( sdot::FunctionEnum::R2InBallW05() );
+            sdot::FunctionEnum::R2InBallW05 f;
+            fu( f );
             return;
         }
 
         throw pybind11::value_error( "unknown function type" );
     }
 
-    template<class Domain,class Grid>
-    pybind11::array_t<TF> get_integrals( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const std::string &func ) {
+    template<class RF,class FU>
+    void find_radial_func( const RF &func, const FU &fu ) {
+        fu( func );
+    }
+
+    template<class Domain,class Grid,class FUNC>
+    pybind11::array_t<TF> get_integrals( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const FUNC &func ) {
         auto ptr_positions = reinterpret_cast<const typename Grid::Pt *>( positions.data() );
         auto ptr_weights = reinterpret_cast<const typename Grid::TF *>( weights.data() );
 
@@ -82,15 +96,15 @@ namespace {
         auto buf_res = res.request();
         auto ptr_res = (TF *)buf_res.ptr;
 
-        find_radial_func( func, [&]( auto ft ) {
+        find_radial_func( func, [&]( const auto &ft ) {
             sdot::get_integrals( ptr_res, grid, domain, ptr_positions, ptr_weights, positions.shape( 0 ), ft );
         } );
 
         return res;
     }
 
-    template<class Domain,class Grid>
-    pybind11::array_t<TF> get_image_integrals( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const std::string &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nbp ) {
+    template<class Domain,class Grid,class FUNC>
+    pybind11::array_t<TF> get_image_integrals( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const FUNC &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nbp ) {
         auto ptr_positions = reinterpret_cast<const typename Grid::Pt *>( positions.data() );
         auto ptr_weights = reinterpret_cast<const typename Grid::TF *>( weights.data() );
         auto ptr_nbp = reinterpret_cast<const std::size_t *>( nbp.data() );
@@ -116,15 +130,15 @@ namespace {
         pybind11::array_t<TF> res;
         res.resize( shape );
 
-        find_radial_func( func, [&]( auto ft ) {
+        find_radial_func( func, [&]( const auto &ft ) {
             sdot::get_image_integrals( res.mutable_data(), grid, domain, ptr_positions, ptr_weights, positions.shape( 0 ), ft, a_beg, a_end, a_nbp );
         } );
 
         return res;
     }
 
-    template<class Domain,class Grid>
-    pybind11::array_t<TF> get_centroids( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const std::string &func ) {
+    template<class Domain,class Grid,class FUNC>
+    pybind11::array_t<TF> get_centroids( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const FUNC &func ) {
         auto buf_positions = positions.request();
         auto buf_weights = weights.request();
 
@@ -136,7 +150,7 @@ namespace {
         auto buf_res = res.request();
         auto ptr_res = (TF *)buf_res.ptr;
 
-        find_radial_func( func, [&]( auto ft ) {
+        find_radial_func( func, [&]( const auto &ft ) {
             sdot::get_centroids( grid, domain, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
                 for( int d = 0; d < PD_DIM; ++d )
                     ptr_res[ PD_DIM * num + d ] = centroid[ d ];
@@ -407,48 +421,23 @@ namespace {
         PyPowerDiagramZGrid( int max_dirac_per_cell ) : grid( max_dirac_per_cell ) {
         }
 
-        void update( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, bool positions_have_changed, bool weights_have_changed, std::string radial_func ) {
+        void update( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, bool positions_have_changed, bool weights_have_changed, bool ball_cut ) {
             auto buf_positions = positions.request();
             auto buf_weights = weights.request();
             if ( buf_positions.shape[ 1 ] != PyPc::dim )
                 throw pybind11::value_error( "dim does not correspond to shape[ 1 ] of positions" );
-
             grid.update(
                 reinterpret_cast<const Pt *>( buf_positions.ptr ),
                 reinterpret_cast<const TF *>( buf_weights.ptr ),
                 positions.shape( 0 ),
                 positions_have_changed,
                 weights_have_changed,
-                radial_func == "in_ball(weight**0.5)"
+                ball_cut
             );
         }
 
-        pybind11::array_t<PD_TYPE> integrals_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
-            return get_integrals( positions, weights, domain.bounds, grid, func );
-        }
-
-        pybind11::array_t<PD_TYPE> integrals_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func ) {
-            return get_integrals( positions, weights, domain.bounds, grid, func );
-        }
-
-        pybind11::array_t<PD_TYPE> image_integrals_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nb_pixels ) {
-            return get_image_integrals( positions, weights, domain.bounds, grid, func, beg, end, nb_pixels );
-        }
-
-        pybind11::array_t<PD_TYPE> image_integrals_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nb_pixels ) {
-            return get_image_integrals( positions, weights, domain.bounds, grid, func, beg, end, nb_pixels );
-        }
-
-        pybind11::array_t<PD_TYPE> centroids_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
-            return get_centroids( positions, weights, domain.bounds, grid, func );
-        }
-
-        pybind11::array_t<PD_TYPE> centroids_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func ) {
-            return get_centroids( positions, weights, domain.bounds, grid, func );
-        }
-
-        template<class Domain>
-        PyDerResult<dim,TF> der_integrals_wrt_weights( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const std::string &func, bool stop_if_void ) {
+        template<class Domain,class FUNC>
+        PyDerResult<dim,TF> der_integrals_wrt_weights( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func, bool stop_if_void ) {
             auto buf_positions = positions.request();
             auto buf_weights = weights.request();
 
@@ -461,7 +450,7 @@ namespace {
             std::vector<PD_TYPE    > w_v_values;
 
             PyDerResult<dim,TF> res;
-            find_radial_func( func, [&]( auto ft ) {
+            find_radial_func( func, [&]( const auto &ft ) {
                 res.error = sdot::get_der_integrals_wrt_weights( w_m_offsets, w_m_columns, w_m_values, w_v_values, grid, domain.bounds, ptr_positions, ptr_weights, std::size_t( positions.shape( 0 ) ), ft, stop_if_void );
             } );
 
@@ -473,16 +462,8 @@ namespace {
             return res;
         }
 
-        PyDerResult<dim,TF> der_integrals_wrt_weights_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, bool stop_if_void ) {
-            return der_integrals_wrt_weights( positions, weights, domain, func, stop_if_void );
-        }   
-
-        PyDerResult<dim,TF> der_integrals_wrt_weights_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, bool stop_if_void ) {
-            return der_integrals_wrt_weights( positions, weights, domain, func, stop_if_void );
-        }   
-
-        template<class Domain>
-        pybind11::array_t<TF> distances_from_boundaries( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const std::string &func, bool count_domain_boundaries ) {
+        template<class Domain,class FUNC>
+        pybind11::array_t<TF> distances_from_boundaries( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func, bool count_domain_boundaries ) {
             auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
             auto ptr_points = reinterpret_cast<const Pt *>( points.data() );
             auto ptr_weights = weights.data();
@@ -490,22 +471,15 @@ namespace {
             pybind11::array_t<PD_TYPE> res;
             res.resize( { points.shape( 0 ) } );
 
-            find_radial_func( func, [&]( auto ft ) {
+            find_radial_func( func, [&]( const auto &ft ) {
                 sdot::get_distances_from_boundaries( res.mutable_data(), ptr_points, std::size_t( points.shape( 0 ) ), grid, domain.bounds, ptr_positions, ptr_weights, std::size_t( positions.shape( 0 ) ), ft, count_domain_boundaries );
             } );
 
             return res;
         }
 
-        pybind11::array_t<TF> distances_from_boundaries_acp( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, bool count_domain_boundaries ) {
-            return distances_from_boundaries( points, positions, weights, domain, func, count_domain_boundaries );
-        }   
-
-        pybind11::array_t<TF> distances_from_boundaries_img(  pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, bool count_domain_boundaries ) {
-            return distances_from_boundaries( points, positions, weights, domain, func, count_domain_boundaries );
-        }   
-    
-        PyDerResult<dim,TF> der_centroids_and_integrals_wrt_weight_and_positions( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func ) {
+        template<class Domain,class FUNC>
+        PyDerResult<dim,TF> der_centroids_and_integrals_wrt_weight_and_positions( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func ) {
             auto buf_positions = positions.request();
             auto buf_weights = weights.request();
 
@@ -518,7 +492,7 @@ namespace {
             std::vector<PD_TYPE    > w_v_values;
 
             PyDerResult<dim,TF> res;
-            find_radial_func( func, [&]( auto ft ) {
+            find_radial_func( func, [&]( const auto &ft ) {
                 res.error = sdot::get_der_centroids_and_integrals_wrt_weight_and_positions( w_m_offsets, w_m_columns, w_m_values, w_v_values, grid, domain.bounds, ptr_positions, ptr_weights, std::size_t( positions.shape( 0 ) ), ft );
             } );
 
@@ -530,8 +504,8 @@ namespace {
             return res;
         }
 
-        template<class Domain>
-        void display_vtk( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const std::string &func, const char *filename, bool points, bool centroids ) {
+        template<class Domain,class FUNC>
+        void display_vtk( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func, const char *filename, bool points, bool centroids ) {
             //        sdot::VtkOutput<1,TF> vo({ "num" });
             //        grid.display( vo );
             //        vo.save( filename );
@@ -542,7 +516,7 @@ namespace {
             auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
             auto ptr_weights = weights.data();
 
-            find_radial_func( func, [&]( auto ft ) {
+            find_radial_func( func, [&]( const auto &ft ) {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
@@ -566,7 +540,7 @@ namespace {
 
             if ( centroids ) {
                 std::vector<Pt> c( positions.shape( 0 ) );
-                find_radial_func( func, [&]( auto ft ) {
+                find_radial_func( func, [&]( const auto &ft ) {
                     sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
                         c[ num ] = centroid;
                     } );
@@ -579,16 +553,8 @@ namespace {
             vtk_output.save( filename );
         }
 
-        void display_vtk_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, const char *filename, bool points, bool centroids ) {
-            display_vtk( positions, weights, domain, func, filename, points, centroids );
-        }
-
-        void display_vtk_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, const char *filename, bool points, bool centroids ) {
-            display_vtk( positions, weights, domain, func, filename, points, centroids );
-        }
-
-        template<class Domain>
-        std::string display_html_canvas( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const std::string &func, int hide_after ) {
+        template<class Domain,class FUNC>
+        std::string display_html_canvas( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func, int hide_after ) {
             std::size_t nd = hide_after >= 0 ? std::min( hide_after, int( positions.shape( 0 ) ) ) : positions.shape( 0 );
             auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
             auto ptr_weights = reinterpret_cast<const TF *>( weights.data() );
@@ -605,7 +571,7 @@ namespace {
 
             // centroids
             std::vector<Pt> c( positions.shape( 0 ) );
-            find_radial_func( func, [&]( auto ft ) {
+            find_radial_func( func, [&]( const auto &ft ) {
                 sdot::get_centroids( grid, domain.bounds, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
                     c[ num ] = centroid;
                 } );
@@ -621,7 +587,7 @@ namespace {
             std::vector<Pt> max_pts( thread_pool.nb_threads(), Pt( - std::numeric_limits<TF>::max() ) );
             std::vector<std::ostringstream> os_int( thread_pool.nb_threads() );
             std::vector<std::ostringstream> os_ext( thread_pool.nb_threads() );
-            find_radial_func( func, [&]( auto ft ) {
+            find_radial_func( func, [&]( const auto &ft ) {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
@@ -672,14 +638,6 @@ namespace {
             return out.str();
         }
 
-        std::string display_html_canvas_acp( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &func, int hide_after ) {
-            return display_html_canvas( positions, weights, domain, func, hide_after );
-        }
-
-        std::string display_html_canvas_img( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyScaledImage<dim,TF> &domain, const std::string &func, int hide_after ) {
-            return display_html_canvas( positions, weights, domain, func, hide_after );
-        }
-
         void display_vtk_points( pybind11::array_t<PD_TYPE> &positions, const char *filename ) {
             sdot::VtkOutput<1> vtk_output( { "num" } );
 
@@ -691,7 +649,8 @@ namespace {
             vtk_output.save( filename );
         }
 
-        void display_asy( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, PyConvexPolyhedraAssembly<dim,TF> &domain, const std::string &radial_func, const char *filename, const char *preamble, pybind11::array_t<PD_TYPE> &values, std::string colormap, double linewidth, double dotwidth, bool avoid_bounds, const char *closing, double min_rf, double max_rf ) {
+        template<class DOMAIN,class FUNC>
+        void display_asy( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN &domain, const FUNC &radial_func, const char *filename, const char *preamble, pybind11::array_t<PD_TYPE> &values, std::string colormap, double linewidth, double dotwidth, bool avoid_bounds, const char *closing, double min_rf, double max_rf ) {
             auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
             #if PD_DIM==2
             auto ptr_weights = weights.data();
@@ -723,7 +682,7 @@ namespace {
             } else {
                 #if PD_DIM==2
                 std::vector<std::ostringstream> outputs( thread_pool.nb_threads() );
-                find_radial_func( radial_func, [&]( auto ft ) {
+                find_radial_func( radial_func, [&]( const auto &ft ) {
                     grid.for_each_laguerre_cell(
                         [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
                             domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
@@ -774,6 +733,37 @@ namespace {
             f << closing;
         }
 
+        #define DEF_FOR( NAME, DOMAIN, FUNC ) \
+            pybind11::array_t<PD_TYPE> integrals_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, FUNC &func ) { \
+                return get_integrals( positions, weights, domain.bounds, grid, func ); \
+            } \
+            pybind11::array_t<PD_TYPE> image_integrals_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nb_pixels ) { \
+                return get_image_integrals( positions, weights, domain.bounds, grid, func, beg, end, nb_pixels ); \
+            } \
+            pybind11::array_t<PD_TYPE> centroids_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func ) { \
+                return get_centroids( positions, weights, domain.bounds, grid, func ); \
+            } \
+            PyDerResult<dim,TF> der_integrals_wrt_weights_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, bool stop_if_void ) { \
+                return der_integrals_wrt_weights( positions, weights, domain, func, stop_if_void ); \
+            } \
+            pybind11::array_t<TF> distances_from_boundaries_##NAME( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, bool count_domain_boundaries ) { \
+                return distances_from_boundaries( points, positions, weights, domain, func, count_domain_boundaries ); \
+            } \
+            void display_vtk_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, const char *filename, bool points, bool centroids ) { \
+                display_vtk( positions, weights, domain, func, filename, points, centroids ); \
+            } \
+            std::string display_html_canvas_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, int hide_after ) { \
+                return display_html_canvas( positions, weights, domain, func, hide_after ); \
+            } \
+            PyDerResult<dim,TF> der_centroids_and_integrals_wrt_weight_and_positions_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func ) { \
+                return der_centroids_and_integrals_wrt_weight_and_positions( positions, weights, domain, func ); \
+            } \
+            void display_asy_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &radial_func, const char *filename, const char *preamble, pybind11::array_t<PD_TYPE> &values, std::string colormap, double linewidth, double dotwidth, bool avoid_bounds, const char *closing, double min_rf, double max_rf ) { \
+                display_asy( positions, weights, domain, radial_func, filename, preamble, values, colormap, linewidth, dotwidth, avoid_bounds, closing, min_rf, max_rf ); \
+            }
+        #include "comb_types.h"
+        #undef DEF_FOR
+
         Grid grid;
     };
 }
@@ -783,56 +773,54 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
 
     using DerResult = PyDerResult<PD_DIM,PD_TYPE>;
     pybind11::class_<DerResult>( m, "DerResult" )
-        .def_readwrite( "m_offsets"                                 , &DerResult::m_offsets                                                   , "" )
-        .def_readwrite( "m_columns"                                 , &DerResult::m_columns                                                   , "" )
-        .def_readwrite( "m_values"                                  , &DerResult::m_values                                                    , "" )
-        .def_readwrite( "v_values"                                  , &DerResult::v_values                                                    , "" )
-        .def_readwrite( "error"                                     , &DerResult::error                                                       , "" )
+        .def_readwrite( "m_offsets"                                 , &DerResult::m_offsets                                                                  , "" )
+        .def_readwrite( "m_columns"                                 , &DerResult::m_columns                                                                  , "" )
+        .def_readwrite( "m_values"                                  , &DerResult::m_values                                                                   , "" )
+        .def_readwrite( "v_values"                                  , &DerResult::v_values                                                                   , "" )
+        .def_readwrite( "error"                                     , &DerResult::error                                                                      , "" )
     ;
 
     using ConvexPolyhedraAssembly = PyConvexPolyhedraAssembly<PD_DIM,PD_TYPE>;
     pybind11::class_<ConvexPolyhedraAssembly>( m, "ConvexPolyhedraAssembly" )
-        .def( pybind11::init<>()                                                                                                              , "" )
-        .def( "add_convex_polyhedron"                               , &ConvexPolyhedraAssembly::add_convex_polyhedron                         , "" )
-        .def( "add_box"                                             , &ConvexPolyhedraAssembly::add_box                                       , "" )
-        .def( "normalize"                                           , &ConvexPolyhedraAssembly::normalize                                     , "" )
-        .def( "display_boundaries_vtk"                              , &ConvexPolyhedraAssembly::display_boundaries_vtk                        , "" )
-        .def( "min_position"                                        , &ConvexPolyhedraAssembly::min_position                                  , "" )
-        .def( "max_position"                                        , &ConvexPolyhedraAssembly::max_position                                  , "" )
-        .def( "coeff_at"                                            , &ConvexPolyhedraAssembly::coeff_at                                      , "" )
-        .def( "measure"                                             , &ConvexPolyhedraAssembly::measure                                       , "" )
+        .def( pybind11::init<>()                                                                                                                             , "" )
+        .def( "add_convex_polyhedron"                               , &ConvexPolyhedraAssembly::add_convex_polyhedron                                        , "" )
+        .def( "add_box"                                             , &ConvexPolyhedraAssembly::add_box                                                      , "" )
+        .def( "normalize"                                           , &ConvexPolyhedraAssembly::normalize                                                    , "" )
+        .def( "display_boundaries_vtk"                              , &ConvexPolyhedraAssembly::display_boundaries_vtk                                       , "" )
+        .def( "min_position"                                        , &ConvexPolyhedraAssembly::min_position                                                 , "" )
+        .def( "max_position"                                        , &ConvexPolyhedraAssembly::max_position                                                 , "" )
+        .def( "coeff_at"                                            , &ConvexPolyhedraAssembly::coeff_at                                                     , "" )
+        .def( "measure"                                             , &ConvexPolyhedraAssembly::measure                                                      , "" )
     ;
 
     using ScaledImage = PyScaledImage<PD_DIM,PD_TYPE>;
     pybind11::class_<ScaledImage>( m, "ScaledImage" )
-        .def( pybind11::init<pybind11::array_t<PD_TYPE> &, pybind11::array_t<PD_TYPE> &, pybind11::array_t<PD_TYPE> &>()                     , "" )
-        .def( "display_boundaries_vtk"                              , &ScaledImage::display_boundaries_vtk                                   , "" )
-        .def( "min_position"                                        , &ScaledImage::min_position                                             , "" )
-        .def( "max_position"                                        , &ScaledImage::max_position                                             , "" )
-        .def( "coeff_at"                                            , &ScaledImage::coeff_at                                                 , "" )
-        .def( "measure"                                             , &ScaledImage::measure                                                  , "" )
+        .def( pybind11::init<pybind11::array_t<PD_TYPE> &, pybind11::array_t<PD_TYPE> &, pybind11::array_t<PD_TYPE> &>()                                     , "" )
+        .def( "display_boundaries_vtk"                                      , &ScaledImage::display_boundaries_vtk                                           , "" )
+        .def( "min_position"                                                , &ScaledImage::min_position                                                     , "" )
+        .def( "max_position"                                                , &ScaledImage::max_position                                                     , "" )
+        .def( "coeff_at"                                                    , &ScaledImage::coeff_at                                                         , "" )
+        .def( "measure"                                                     , &ScaledImage::measure                                                          , "" )
     ;
+
 
     using PowerDiagramZGrid = PyPowerDiagramZGrid;
     pybind11::class_<PowerDiagramZGrid>( m, "PowerDiagramZGrid" )
-        .def( pybind11::init<int>()                                                                                                           , "" )
-        .def( "update"                                              , &PowerDiagramZGrid::update                                              , "" )
-        .def( "integrals"                                           , &PowerDiagramZGrid::integrals_acp                                       , "" )
-        .def( "integrals"                                           , &PowerDiagramZGrid::integrals_img                                       , "" )
-        .def( "image_integrals"                                     , &PowerDiagramZGrid::image_integrals_acp                                 , "" )
-        .def( "image_integrals"                                     , &PowerDiagramZGrid::image_integrals_img                                 , "" )
-        .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_acp                       , "" )
-        .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_img                       , "" )
-        .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions, "" )
-        .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_acp                       , "" )
-        .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_img                       , "" )
-        .def( "centroids"                                           , &PowerDiagramZGrid::centroids_acp                                       , "" )
-        .def( "centroids"                                           , &PowerDiagramZGrid::centroids_img                                       , "" )
-        .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk_acp                                     , "" )
-        .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk_img                                     , "" )
-        .def( "display_html_canvas"                                 , &PowerDiagramZGrid::display_html_canvas_acp                             , "" )
-        .def( "display_html_canvas"                                 , &PowerDiagramZGrid::display_html_canvas_img                             , "" )
-        .def( "display_vtk_points"                                  , &PowerDiagramZGrid::display_vtk_points                                  , "" )
-        .def( "display_asy"                                         , &PowerDiagramZGrid::display_asy                                         , "" )
+        .def( pybind11::init<int>()                                                                                                                          , "" )
+        .def( "update"                                                      , &PowerDiagramZGrid::update                                                     , "" )
+        #define DEF_FOR( NAME, DOMAIN, FUNC ) \
+                .def( "integrals"                                           , &PowerDiagramZGrid::integrals_##NAME                                           , "" ) \
+                .def( "image_integrals"                                     , &PowerDiagramZGrid::image_integrals_##NAME                                     , "" ) \
+                .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_##NAME                           , "" ) \
+                .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_##NAME                           , "" ) \
+                .def( "centroids"                                           , &PowerDiagramZGrid::centroids_##NAME                                           , "" ) \
+                .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk_##NAME                                         , "" ) \
+                .def( "display_html_canvas"                                 , &PowerDiagramZGrid::display_html_canvas_##NAME                                 , "" ) \
+                .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions_##NAME, "" ) \
+                .def( "display_asy"                                         , &PowerDiagramZGrid::display_asy_##NAME                                         , "" )
+        #include "comb_types.h"
+        #undef DEF_FOR
+        .def( "display_vtk_points"                                  , &PowerDiagramZGrid::display_vtk_points                                                 , "" )
     ;
+
 }

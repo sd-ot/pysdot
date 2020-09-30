@@ -8,3 +8,6 @@ class RadialFuncInBall:
 
     def second_order_moment_name(self):
         return "r^2*in_ball(weight**0.5)"
+
+    def ball_cut( self ):
+        return True

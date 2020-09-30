@@ -19,6 +19,18 @@ if 'linux' in sys.platform:
     extra_compile_args.append("-ffast-math")
 
 ext_modules = []
+
+# Arfd
+for ext in ["Arfd"]:
+    ext_modules.append(Extension(
+        "pybind_sdot_" + ext,
+        sources=['pysdot/cpp/pybind_sdot_' + ext + '.cpp'],
+        include_dirs=['ext','ext/pybind11/include/'],
+        language='c++',
+        extra_compile_args=extra_compile_args,
+    ))
+
+# PowerDiagram
 for TF in ["double"]:
     for dim in [2, 3]:
         name = 'pybind_sdot_{}d_{}'.format(dim, TF)
