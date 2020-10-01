@@ -24,11 +24,22 @@ class TestArfd_2D(unittest.TestCase):
         pd = PowerDiagram(domain=domain, radial_func=rf)
         pd.set_positions(np.array([[0.0, 0.0]]))
 
-        # test integration values
-        for ( w, r ) in [ ( 0.5, np.pi/32 ), ( 1, np.pi/8 ), ( 10, 50/3 ), ( 100, 590/3 ) ]:
-            pd.set_weights(np.array([w]))
+        # tests (w = weight, i = integral, c = centroid)
+        l = [
+            { "w": 0.5, "i": np.pi / 32, "c": [0, 0] },
+            { "w":   1, "i": np.pi /  8, "c": [0, 0] },
+            { "w":  10, "i":    50 /  3, "c": [0, 0] },
+            { "w": 100, "i":   590 /  3, "c": [0, 0] },
+        ]
+        for d in l:
+            pd.set_weights(np.array([d["w"]]))
+
             ig = pd.integrals()
-            self.assertAlmostEqual(ig[ 0 ], r)
+            self.assertAlmostEqual(ig[ 0 ], d["i"])
+
+            cs = pd.centroids()
+            print( cs[ 0 ] )
+            #self.assertAlmostEqual(ig[ 0 ], d["i"])
 
 
 
