@@ -44,7 +44,7 @@ class TestDerIntegrate_2D_weights(unittest.TestCase):
 
         eps = 1e-6
         res = pd.integrals()
-        delta = np.max(np.abs(mat)) * 100 * eps
+        delta = np.max(np.abs(mat)) * 200 * eps
         for i in range(ndi):
             pd.set_weights(np.array(
                 [weights[j] + eps * (i == j) for j in range(ndi)]
