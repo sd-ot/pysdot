@@ -651,8 +651,8 @@ namespace {
             vtk_output.save( filename );
         }
 
-        template<class DOMAIN,class FUNC>
-        void display_asy( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN &domain, const FUNC &radial_func, const char *filename, const char *preamble, pybind11::array_t<PD_TYPE> &values, std::string colormap, double linewidth, double dotwidth, bool avoid_bounds, const char *closing, double min_rf, double max_rf ) {
+        template<class Domain,class Func>
+        void display_asy( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const Func &radial_func, const char *filename, const char *preamble, pybind11::array_t<PD_TYPE> &values, std::string colormap, double linewidth, double dotwidth, bool avoid_bounds, const char *closing, double min_rf, double max_rf ) {
             auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
             #if PD_DIM==2
             auto ptr_weights = weights.data();
