@@ -26,7 +26,7 @@ class ConvexPolyhedraAssembly:
     def sub_box(self, min_pos, max_pos, coeff=1.0, cut_id=-1):
         self.add_box( min_pos, max_pos, - coeff, cut_id )
 
-
+    # For large images, it's better to use ScaledImage than ConvexPolyhedraAssembly. @see examples/optimal_transport/img_as_density.py for an example
     def add_img(self, min_pos, max_pos, img, cut_id=-1):
         sx = 1.0 * ( max_pos[ 0 ] - min_pos[ 0 ] ) / img.shape[ 1 ]
         sy = 1.0 * ( max_pos[ 1 ] - min_pos[ 1 ] ) / img.shape[ 0 ]
