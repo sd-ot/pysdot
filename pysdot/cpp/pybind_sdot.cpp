@@ -181,7 +181,7 @@ namespace {
     };
 
     struct PyPc {
-        static constexpr int allow_translations = 0;
+        static constexpr int allow_translations = 1;
         static constexpr int nb_bits_per_axis   = 31;
         static constexpr int allow_ball_cut     = 1;
         static constexpr int dim                = PD_DIM;
@@ -421,6 +421,13 @@ namespace {
         using Pt   = typename Grid::Pt;
 
         PyPowerDiagramZGrid( int max_dirac_per_cell ) : grid( max_dirac_per_cell ) {
+        }
+
+        void add_replication( pybind11::array_t<PD_TYPE> &positions ) {
+            Pt p;
+            for( int d = 0; d < PD_DIM; ++d )
+                p[ d ] = positions.at( d );
+            grid.translations.push_back( p );
         }
 
         void update( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, bool positions_have_changed, bool weights_have_changed, bool ball_cut ) {
@@ -810,6 +817,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
     pybind11::class_<PowerDiagramZGrid>( m, "PowerDiagramZGrid" )
         .def( pybind11::init<int>()                                                                                                                          , "" )
         .def( "update"                                                      , &PowerDiagramZGrid::update                                                     , "" )
+        .def( "add_replication"                                             , &PowerDiagramZGrid::add_replication                                            , "" )
         #define DEF_FOR( NAME, DOMAIN, FUNC ) \
                 .def( "integrals"                                           , &PowerDiagramZGrid::integrals_##NAME                                           , "" ) \
                 .def( "image_integrals"                                     , &PowerDiagramZGrid::image_integrals_##NAME                                     , "" ) \

@@ -6,7 +6,7 @@ import os
 
 
 class PowerDiagram:
-    def __init__(self, positions=None, weights=None, domain=None, radial_func=RadialFuncUnit()):
+    def __init__(self, positions=None, weights=None, domain=None, radial_func=RadialFuncUnit(), replications=[]):
         self.radial_func = radial_func
 
         self.positions = None
@@ -16,6 +16,7 @@ class PowerDiagram:
         self._positions_are_new = True
         self._weights_are_new = True
         self._domain_is_new = True
+        self._replications = replications
         self._inst = None
 
         if not ( domain is None ):
@@ -24,6 +25,12 @@ class PowerDiagram:
             self.set_positions( positions ) 
         if not ( weights is None ):
             self.set_weights( weights )
+
+    # for periodic boundaries.
+    def add_replication( self, trans ):
+        if self._inst:
+            self._inst.add_replication( trans )
+        self._replications.append( trans )
 
     def get_positions(self):
         return self.positions
@@ -433,6 +440,8 @@ class PowerDiagram:
                 self.domain._type, self.positions.shape[1]
             )
             self._inst = module.PowerDiagramZGrid(11)
+            for t in self._replications:
+                self._inst.add_replication( t )
 
         self._inst.update(
             self.positions,
