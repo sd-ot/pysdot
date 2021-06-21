@@ -83,13 +83,19 @@ class PowerDiagram:
             self.radial_func.second_order_moment_name()
         )
 
-    def centroids(self):
+    def centroids(self, rand_ratio=0.0):
+        """
+           return ( 1 - rand_ratio ) * centroid_of_each_cell + rand_ratio * random_point_for_each_cell
+
+           if rand_ratio == 0, it only computes the real centroids.
+        """
         inst = self._updated_grid()
         return inst.centroids(
             self.positions,
             self.weights,
             self.domain._inst,
-            self.radial_func.name()
+            self.radial_func.name(),
+            rand_ratio
         )
 
     def distances_from_boundaries(self, points, count_domain_boundaries=False):

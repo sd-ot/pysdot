@@ -140,7 +140,7 @@ namespace {
     }
 
     template<class Domain,class Grid,class FUNC>
-    pybind11::array_t<TF> get_centroids( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const FUNC &func ) {
+    pybind11::array_t<TF> get_centroids( pybind11::array_t<TF> &positions, pybind11::array_t<TF> &weights, Domain &domain, Grid &grid, const FUNC &func, TF rand_ratio ) {
         auto buf_positions = positions.request();
         auto buf_weights = weights.request();
 
@@ -156,7 +156,7 @@ namespace {
             sdot::get_centroids( grid, domain, ptr_positions, ptr_weights, positions.shape( 0 ), ft, [&]( auto centroid, auto, auto num ) {
                 for( int d = 0; d < PD_DIM; ++d )
                     ptr_res[ PD_DIM * num + d ] = centroid[ d ];
-            } );
+            }, rand_ratio );
         } );
 
         return res;
@@ -749,8 +749,8 @@ namespace {
             pybind11::array_t<PD_TYPE> image_integrals_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, pybind11::array_t<TF> &beg, pybind11::array_t<TF> &end, pybind11::array_t<std::size_t> &nb_pixels ) { \
                 return get_image_integrals( positions, weights, domain.bounds, grid, func, beg, end, nb_pixels ); \
             } \
-            pybind11::array_t<PD_TYPE> centroids_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func ) { \
-                return get_centroids( positions, weights, domain.bounds, grid, func ); \
+            pybind11::array_t<PD_TYPE> centroids_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, TF rand_ratio ) { \
+                return get_centroids( positions, weights, domain.bounds, grid, func, rand_ratio ); \
             } \
             PyDerResult<dim,TF> der_integrals_wrt_weights_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, bool stop_if_void ) { \
                 return der_integrals_wrt_weights( positions, weights, domain, func, stop_if_void ); \

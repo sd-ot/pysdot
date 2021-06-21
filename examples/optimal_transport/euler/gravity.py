@@ -1,6 +1,6 @@
 from pysdot.domain_types import ConvexPolyhedraAssembly
-from pysdot.examples import FluidSystem
 import matplotlib.pyplot as plt
+import FluidSystem
 import numpy as np
 import os
 
@@ -26,7 +26,7 @@ def run(n, base_filename, l=0.5):
     masses = np.ones( len( positions ) ) * l**2 / n**2
 
     # simulation
-    fs = FluidSystem( domain, positions, velocities, masses, base_filename )
+    fs = FluidSystem.FluidSystem( domain, positions, velocities, masses, base_filename )
     fs.coeff_centroid_force = 1e-5
     fs.display()
 
