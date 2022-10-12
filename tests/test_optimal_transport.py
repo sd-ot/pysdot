@@ -13,7 +13,7 @@ class TestOptimalTransport(unittest.TestCase):
         self.domain.add_box([0, 0], [1, 1])
 
     def test_base_ot(self, nb_diracs=1000):
-        for _ in range(10):
+        for _ in range(100):
             ot = OptimalTransport(self.domain)
 
             # diracs
@@ -32,7 +32,7 @@ class TestOptimalTransport(unittest.TestCase):
 
     def test_ball_cut(self, nb_diracs=100):
         for _ in range(10):
-            ot = OptimalTransport(self.domain, RadialFuncInBall())
+            ot = OptimalTransport(self.domain, radial_func=RadialFuncInBall())
 
             positions = np.random.rand(nb_diracs, 2)
             positions[:, 1] *= 0.5
@@ -48,12 +48,14 @@ class TestOptimalTransport(unittest.TestCase):
             # optimal weights
             ot.adjust_weights()
 
+            ot.pd.display_vtk("results/pd.vtk")
+
             # integrals
             areas = ot.pd.integrals()
+
             self.assertAlmostEqual(np.min(areas), mass, places=6)
             self.assertAlmostEqual(np.max(areas), mass, places=6)
 
-            # ot.pd.display_vtk("results/vtk/pd.vtk")
 
 if __name__ == '__main__':
     np.random.seed(1)

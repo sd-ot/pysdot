@@ -25,7 +25,7 @@ for ext in ["Arfd"]:
     ext_modules.append(Extension(
         "pybind_sdot_" + ext,
         sources=['pysdot/cpp/pybind_sdot_' + ext + '.cpp'],
-        include_dirs=['ext','ext/pybind11/include/'],
+        include_dirs=['ext/eigen3','ext/pybind11/include/'],
         language='c++',
         extra_compile_args=extra_compile_args,
     ))
@@ -37,7 +37,7 @@ for TF in ["double"]:
         ext_modules.append(Extension(
             name,
             sources=['pysdot/cpp/pybind_sdot.cpp'],
-            include_dirs=['ext','ext/pybind11/include/'],
+            include_dirs=['ext/eigen3','ext/pybind11/include/'],
             define_macros=[
                 # ('PD_WANT_STAT', ""),
                 ('PD_MODULE_NAME', name),

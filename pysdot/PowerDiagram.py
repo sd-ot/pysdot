@@ -29,7 +29,7 @@ class PowerDiagram:
     # for periodic boundaries.
     def add_replication( self, trans ):
         if self._inst:
-            self._inst.add_replication( trans )
+            self._inst.add_replication( np.ascontiguousarray( trans ) )
         self._replications.append( trans )
 
     def get_positions(self):
@@ -56,8 +56,8 @@ class PowerDiagram:
     def integrals(self):
         inst = self._updated_grid()
         return inst.integrals(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name()
         )
@@ -65,20 +65,20 @@ class PowerDiagram:
     def image_integrals(self, min_pos, max_pos, dimensions):
         inst = self._updated_grid()
         return inst.image_integrals(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name(),
-            min_pos,
-            max_pos,
-            dimensions
+            np.ascontiguousarray( min_pos ),
+            np.ascontiguousarray( max_pos ),
+            np.ascontiguousarray( dimensions )
         )
 
     def second_order_moments(self):
         inst = self._updated_grid()
         return inst.integrals(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.second_order_moment_name()
         )
@@ -91,8 +91,8 @@ class PowerDiagram:
         """
         inst = self._updated_grid()
         return inst.centroids(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name(),
             rand_ratio
@@ -101,9 +101,9 @@ class PowerDiagram:
     def distances_from_boundaries(self, points, count_domain_boundaries=False):
         inst = self._updated_grid()
         return inst.distances_from_boundaries(
-            points,
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( points ),
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name(),
             count_domain_boundaries
@@ -112,8 +112,8 @@ class PowerDiagram:
     def der_integrals_wrt_weights(self, stop_if_void=False):
         inst = self._updated_grid()
         return inst.der_integrals_wrt_weights(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name(),
             stop_if_void
@@ -122,8 +122,8 @@ class PowerDiagram:
     def der_centroids_and_integrals_wrt_weight_and_positions(self):
         inst = self._updated_grid()
         return inst.der_centroids_and_integrals_wrt_weight_and_positions(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name()
         )
@@ -134,8 +134,8 @@ class PowerDiagram:
             os.makedirs(dn, exist_ok=True)
         inst = self._updated_grid()
         return inst.display_vtk(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name(),
             filename,
@@ -145,13 +145,13 @@ class PowerDiagram:
 
     def display_vtk_points(self, filename, points=None):
         if points is None:
-            return self.display_vtk_points(filename, self.positions)
+            return self.display_vtk_points(filename, np.ascontiguousarray( self.positions ))
         dn = os.path.dirname(filename)
         if len(dn):
             os.makedirs(dn, exist_ok=True)
         inst = self._updated_grid()
         return inst.display_vtk_points(
-            self.positions,
+            np.ascontiguousarray( self.positions ),
             filename
         )
 
@@ -170,13 +170,13 @@ class PowerDiagram:
 
         inst = self._updated_grid()
         inst.display_asy(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self.domain._inst,
             self.radial_func.name(),
             filename,
             p,
-            values,
+            np.ascontiguousarray( values ),
             colormap,
             linewidth,
             dotwidth,
@@ -207,8 +207,8 @@ class PowerDiagram:
 
                 inst = self._updated_grid()
                 pd_list += inst.display_html_canvas(
-                    self.positions,
-                    self.weights,
+                    np.ascontiguousarray( self.positions ),
+                    np.ascontiguousarray( self.weights ),
                     self.domain._inst,
                     self.radial_func.name(),
                     hide_after
@@ -219,8 +219,8 @@ class PowerDiagram:
         else:
             inst = self._updated_grid()
             pd_list += inst.display_html_canvas(
-                self.positions,
-                self.weights,
+                np.ascontiguousarray( self.positions ),
+                np.ascontiguousarray( self.weights ),
                 self.domain._inst,
                 self.radial_func.name(),
                 hide_after
@@ -447,11 +447,11 @@ class PowerDiagram:
             )
             self._inst = module.PowerDiagramZGrid(11)
             for t in self._replications:
-                self._inst.add_replication( t )
+                self._inst.add_replication( np.ascontiguousarray( t ) )
 
         self._inst.update(
-            self.positions,
-            self.weights,
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
             self._positions_are_new or self._domain_is_new,
             self._weights_are_new or self._domain_is_new,
             self.radial_func.ball_cut()

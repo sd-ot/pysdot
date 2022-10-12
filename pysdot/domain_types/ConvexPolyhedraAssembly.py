@@ -17,8 +17,8 @@ class ConvexPolyhedraAssembly:
         a_max_pos = np.array(max_pos, dtype=self._type)
         inst = self._update_inst([a_min_pos.shape[0], a_max_pos.shape[0]])
         inst.add_box(
-            a_min_pos,
-            a_max_pos,
+            np.ascontiguousarray( a_min_pos ),
+            np.ascontiguousarray( a_max_pos ),
             self._type(coeff),
             np.uint64(cut_id)
         )
@@ -59,7 +59,7 @@ class ConvexPolyhedraAssembly:
     def add_convex_polyhedron(self, positions_and_normals, coeff=1.0, cut_id=-1):
         pan = np.array(positions_and_normals, dtype=np.float64)
         inst = self._update_inst([int(pan.shape[1]/2)])
-        inst.add_convex_polyhedron(pan, self._type(coeff), np.uint64(cut_id))
+        inst.add_convex_polyhedron(np.ascontiguousarray( pan ), self._type(coeff), np.uint64(cut_id))
 
     # def normalize( self ):
     #     self._inst.normalize()
