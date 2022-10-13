@@ -20,7 +20,7 @@ if 'linux' in sys.platform:
 
 ext_modules = []
 
-cp = ""
+cp = "C:/Miniconda/envs/test"
 try:
     cp = os.environ.get('CONDA_PREFIX')
 except:
