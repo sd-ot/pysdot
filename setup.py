@@ -20,12 +20,18 @@ if 'linux' in sys.platform:
 
 ext_modules = []
 
+cp = ""
+try:
+    cp = os.environ.get('CONDA_PREFIX')
+except:
+    pass
+
 # Arfd
 for ext in ["Arfd"]:
     ext_modules.append(Extension(
         "pybind_sdot_" + ext,
         sources=['pysdot/cpp/pybind_sdot_' + ext + '.cpp'],
-        include_dirs=['ext/eigen3','ext/pybind11/include','ext/boost_1_80_0'],
+        include_dirs=['ext/eigen3',cp+'/include/'],
         language='c++',
         extra_compile_args=extra_compile_args,
     ))
@@ -37,7 +43,7 @@ for TF in ["double"]:
         ext_modules.append(Extension(
             name,
             sources=['pysdot/cpp/pybind_sdot.cpp'],
-            include_dirs=['ext/eigen3','ext/pybind11/include','ext/boost_1_80_0'],
+            include_dirs=['ext/eigen3',cp+'/include/'],
             define_macros=[
                 # ('PD_WANT_STAT', ""),
                 ('PD_MODULE_NAME', name),
@@ -56,11 +62,6 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
             subprocess.check_call(['git', 'clone', 'https://github.com/sd-ot/sdot.git', 'ext/sdot'])
         if not os.path.isdir('./ext/eigen3'):
             subprocess.check_call(['git', 'clone', 'https://github.com/eigenteam/eigen-git-mirror.git', 'ext/eigen3'])
-        if not os.path.isdir('./ext/pybind11'):
-            subprocess.check_call(['git', 'clone', 'https://github.com/pybind/pybind11.git', 'ext/pybind11'])
-        if not os.path.isdir('./ext/boost_1_80_0'):
-            subprocess.check_call(['wget', 'https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.bz2'], cwd='ext')
-            subprocess.check_call(['tar', 'xjf', 'boost_1_80_0.tar.bz2'], cwd='ext')
         setuptools.command.build_py.build_py.run(self)
 
 setup(
