@@ -20,8 +20,8 @@ if 'linux' in sys.platform:
 
 ext_modules = []
 
-include_dirs = [ 'ext/eigen3', 'ext/pybind11/include' ]
-for ev in [ ( "CONDA_PREFIX", "/include" ), ( "LIBRARY_INC", "" ) ]:
+include_dirs = [ 'ext/eigen3', 'ext/pybind11/include', '/usr/share/miniconda/envs/test/include', '$PREFIX/include', '$CONDA_PREFIX/include' ]
+for ev in [ ( "CONDA_PREFIX", "/include" ), ( "PREFIX", "/include" ), ( "BUILD_PREFIX", "/include" ), ( "LIBRARY_INC", "" ) ]:
     try:
         include_dirs.append( os.environ.get( ev[ 0 ] ) + ev[ 1 ] )
     except:
