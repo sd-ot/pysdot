@@ -20,19 +20,21 @@ if 'linux' in sys.platform:
 
 ext_modules = []
 
-cp = "C:\\Miniconda\\envs\\test\\include"
-try:
-    cp = os.environ.get('CONDA_PREFIX') + '/include/'
-except:
-    pass
-print( "=============================== cp =============================", cp )
+include_dirs = [ 'ext/eigen3', 'ext/pybind11/include' ]
+for ev in [ ( "CONDA_PREFIX", "/include" ), ( "LIBRARY_INC", "" ) ]:
+    try:
+        include_dirs.append( os.environ.get( ev[ 0 ] ) + ev[ 1 ] )
+    except:
+        pass
+
+print( "=============================== include_dirs =============================", include_dirs )
 
 # Arfd
 for ext in ["Arfd"]:
     ext_modules.append(Extension(
         "pybind_sdot_" + ext,
         sources=['pysdot/cpp/pybind_sdot_' + ext + '.cpp'],
-        include_dirs=['ext/eigen3',cp,'ext/pybind11/include',"C:\\Miniconda\\envs\\test\\include"],
+        include_dirs=include_dirs,
         language='c++',
         extra_compile_args=extra_compile_args,
     ))
@@ -44,7 +46,7 @@ for TF in ["double"]:
         ext_modules.append(Extension(
             name,
             sources=['pysdot/cpp/pybind_sdot.cpp'],
-            include_dirs=['ext/eigen3',cp,'ext/pybind11/include',"C:\\Miniconda\\envs\\test\\include"],
+            include_dirs=include_dirs,
             define_macros=[
                 # ('PD_WANT_STAT', ""),
                 ('PD_MODULE_NAME', name),
