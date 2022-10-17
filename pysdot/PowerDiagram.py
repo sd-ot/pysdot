@@ -37,14 +37,14 @@ class PowerDiagram:
 
     def set_positions(self, positions):
         self._positions_are_new = True
-        self.positions = positions
+        self.positions = np.ascontiguousarray( positions )
 
     def get_weights(self):
         return self.weights
 
     def set_weights(self, weights):
         self._weights_are_new = True
-        self.weights = weights
+        self.weights = np.ascontiguousarray( weights )
 
     def get_domain(self):
         return self.domain

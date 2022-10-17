@@ -356,14 +356,20 @@ namespace {
         using TI = typename TB::TI;
 
         PyScaledImage( pybind11::array_t<PD_TYPE> &min_pt, pybind11::array_t<PD_TYPE> &max_pt, pybind11::array_t<PD_TYPE> &img ) {
-            if ( min_pt.size() != PyPc::dim )
+            if ( min_pt.size() != dim )
                 throw pybind11::value_error( "wrong dimensions for point" );
-            if ( max_pt.size() != PyPc::dim )
+            if ( max_pt.size() != dim )
                 throw pybind11::value_error( "wrong dimensions for point" );
+
             std::array<TI,dim> sizes;
             for( std::size_t d = 0; d < dim; ++d )
-                sizes[ d ] = img.shape( dim - 1 - d );
-            bounds = { Pt( min_pt.data() ), Pt( max_pt.data() ), img.data(), sizes };
+                sizes[ d ] = img.shape( img.ndim() - 1 - d );
+
+            TI nb_coeffs = 1;
+            if ( img.ndim() == dim + 1 )
+                nb_coeffs = img.shape( 0 );
+
+            bounds = { Pt( min_pt.data() ), Pt( max_pt.data() ), img.data(), sizes, nb_coeffs };
         }
 
         // PD_TYPE coeff_at( pybind11::array_t<PD_TYPE> &point ) {
@@ -529,7 +535,7 @@ namespace {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
-                            if ( space_func.coeff )
+                            if ( space_func )
                                 cp.display( vtk_output, { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ) } );
                         } );
                     },
@@ -600,7 +606,7 @@ namespace {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int num_thread ) {
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
-                            if ( space_func.coeff ) {
+                            if ( space_func ) {
                                 if ( num_dirac_0 < nd ) {
                                     cp.display_html_canvas( os_int[ num_thread ], ptr_weights[ num_dirac_0 ], 0 );
                                     cp.display_html_canvas( os_ext[ num_thread ], ptr_weights[ num_dirac_0 ], 1 );
