@@ -6,7 +6,7 @@ import os
 #
 class ScaledImage:
     def __init__(self, min_pt, max_pt, img):
-        module = cpp_module.module_for_type_and_dim( np.float64, min_pt.size )
+        module = cpp_module.module_for_type_and_dim( np.float64, np.array( min_pt ).size )
         self._inst = module.ScaledImage( 
             np.ascontiguousarray( min_pt ),
             np.ascontiguousarray( max_pt ),
@@ -26,7 +26,7 @@ class ScaledImage:
 
     # coefficient at `point`. If point is not contained, return 0.
     def coeff_at( self, point ):
-        return self._inst.coeff_at( np.array( point ) )
+        return self._inst.coeff_at( np.ascontiguousarray( point ) )
 
     # 
     def min_position( self ):
