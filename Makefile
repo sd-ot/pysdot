@@ -13,6 +13,6 @@ test:
 
 pip:
 	python setup.py sdist
-	twine upload dist/*
+	twine upload --verbose dist/*
 
 .PHONY: test comp
