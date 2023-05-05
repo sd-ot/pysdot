@@ -131,7 +131,21 @@ class OptimalTransport:
             x = linear_solver.solve(A, b)
 
             # update weights
-            self.pd.set_weights(self.pd.get_weights() - relax * x)
+            loc_relax = relax
+            cpt_loc = 0
+            while True:
+                W = self.pd.get_weights() - loc_relax * x
+                if self.pd.radial_func.ball_cut() == False or np.all( W >= 0 ): # HUM
+                    self.pd.set_weights( W )
+                    break
+                if self.verbosity > 1:
+                    print("negative weight, loc_relax=", loc_relax)
+                loc_relax *= 0.75
+
+                cpt_loc += 1
+                if cpt_loc == 50:
+                    print( "impossible to get positive weights" )
+                    return True
 
             # "dw" stopping criterion
             nw = np.max(np.abs(x))
