@@ -13,14 +13,22 @@ def dist(a, b):
 
 class OptimalTransport:
     def __init__(self, positions=None, weights=None, domain=None, masses=None, radial_func=RadialFuncUnit(),
-                 obj_max_dw=1e-8, linear_solver="Petsc", verbosity=0):
+                 obj_max_dw=1e-8, obj_max_dm=0, linear_solver="Petsc", verbosity=0):
+        """
+           stopping criterion = first obj_max_xy that is != 0
+             * obj_max_dw => delta weights between two iterations
+             * obj_max_dm => 
+        """
+
         self.pd = PowerDiagram(positions, weights, domain, radial_func)
         self.obj_max_dw = obj_max_dw
+        self.obj_max_dm = obj_max_dm
         self.masses = masses
         
         self.linear_solver = linear_solver
         self.verbosity = verbosity
         self.max_iter = 1000
+        self.delta_m = []
         self.delta_w = []
 
         self._linear_solver_inst = None
@@ -52,6 +60,8 @@ class OptimalTransport:
         self.pd.set_weights(new_weights)
 
     def adjust_weights(self, initial_weights=None, ret_if_err=False, relax=1.0):
+        assert( self.obj_max_dw or self.obj_max_dm )
+
         if not ( initial_weights is None ):
             self.set_weights( initial_weights )
             
@@ -97,6 +107,16 @@ class OptimalTransport:
                 mvs.m_values[0] *= 2
             mvs.v_values -= self.masses
 
+            # "dm" stopping criterion
+            nm = np.max(np.abs(mvs.v_values))
+            self.delta_m.append(nm)
+            if self.obj_max_dm:
+                if self.verbosity > 1:
+                    print("max dm:", nm)
+                if nm < self.obj_max_dm:
+                    break
+
+            # linear system
             A = linear_solver.create_matrix(
                 self.pd.weights.shape[0],
                 mvs.m_offsets,
@@ -127,13 +147,14 @@ class OptimalTransport:
                     print( "impossible to get positive weights" )
                     return True
 
-            nx = np.max(np.abs(x))
-            if self.verbosity > 1:
-                print("max dw:", nx)
-            self.delta_w.append(nx)
-
-            if nx < self.obj_max_dw:
-                break
+            # "dw" stopping criterion
+            nw = np.max(np.abs(x))
+            self.delta_w.append(nw)
+            if self.obj_max_dw:
+                if self.verbosity > 1:
+                    print("max dw:", nw)
+                if nw < self.obj_max_dw:
+                    break
                 
         return False
 
@@ -151,6 +172,26 @@ class OptimalTransport:
 
     def dim(self):
         return self.pd.positions.shape[1]
+
+    def set_stopping_criterion(self, value, type="max delta masses"):
+        """
+            Possible values for type
+            * "max delta masses" => max(abs(actual masses - target ones))
+            * "max delta weights" => max(abs(weights - weights last iteration))
+        """
+
+        self.obj_max_dw = 0
+        self.obj_max_dm = 0
+
+        if type == "max delta masses":
+            self.obj_max_dm = value
+            return
+
+        if type == "max delta weights":
+            self.obj_max_dw = value
+            return
+
+        raise "'{}' is not a known stopping criterion type".format( type )
 
     def _get_linear_solver(self):
         if (self._linear_solver_inst is not None):
