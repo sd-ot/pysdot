@@ -99,7 +99,12 @@ class TransportMap:
 
     def show(self, arrows=False):
         # self.pd.display_vtk(filename, points, centroids)
-        pass
+        import pyvista as pv
+
+        cyl = pv.Cylinder()
+        p = pv.Plotter()
+        p.add_mesh(cyl, color="tan", show_edges=True)
+        p.show()
 
 
 def find_transport_map(positions, masses=None, initial_weights=None, domain=None):
