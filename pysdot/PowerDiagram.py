@@ -155,6 +155,16 @@ class PowerDiagram:
             filename
         )
 
+    def vtk_mesh_data(self, shrink_factor=0.0):
+        inst = self._updated_grid()
+        return inst.vtk_mesh_data(
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
+            self.domain._inst,
+            self.radial_func.name(),
+            shrink_factor
+        )
+
     # make a .asy file for a representation of the power diagram
     def display_asy(self, filename, preamble="", closing="", output_format="pdf", linewidth=0.02, dotwidth=0.0, values=np.array([]), colormap="inferno", avoid_bounds=False, min_rf=1, max_rf=0):
         dn = os.path.dirname( filename )

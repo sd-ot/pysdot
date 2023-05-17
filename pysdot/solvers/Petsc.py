@@ -3,6 +3,10 @@ from petsc4py import PETSc
 
 #
 class Solver:
+    """
+       Solver that uses petsc4py (that can be installed for instance using `conda install -c conda-forge petsc4py`)
+    """
+    
     def __init__(self):
         pass
 

@@ -524,7 +524,7 @@ namespace {
             //        sdot::VtkOutput<1,TF> vo({ "num" });
             //        grid.display( vo );
             //        vo.save( filename );
-            sdot::VtkOutput<3> vtk_output( { "weight", "num", "kind" } );
+            sdot::VtkOutput<6> vtk_output( { "weight", "num", "kind", "centroid_x", "centroid_y", "centroid_z" } );
 
             // auto buf_positions = positions.request();
             // auto buf_weights = weights.request();
@@ -534,9 +534,22 @@ namespace {
             find_radial_func( func, [&]( const auto &ft ) {
                 grid.for_each_laguerre_cell(
                     [&]( auto &lc, std::size_t num_dirac_0, int ) {
+                        // get centroid
+                        TF mass = 0;
+                        Pt centroid = TF( 0 );
+                        domain.bounds.for_each_intersection( lc, [&]( auto &cp, const auto &sf ) {
+                            cp.add_centroid_contrib( centroid, mass, sf, ft.func_for_final_cp_integration(), ptr_weights[ num_dirac_0 ] );
+                        } );
+                        if ( mass )
+                            centroid = 1 / mass * centroid;
+
                         domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
                             if ( space_func )
-                                cp.display( vtk_output, { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ) } );
+                                cp.display( vtk_output, { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ), 
+                                    0 < dim ? centroid[ 0 ] : TF( 0 ),
+                                    1 < dim ? centroid[ 1 ] : TF( 0 ),
+                                    2 < dim ? centroid[ 2 ] : TF( 0 )
+                                } );
                         } );
                     },
                     domain.bounds.englobing_convex_polyhedron(),
@@ -566,6 +579,36 @@ namespace {
             }
 
             vtk_output.save( filename );
+        }
+
+        template<class Domain,class FUNC>
+        std::tuple<std::vector<PT>,std::vector<PT>,std::vector<PD_TYPE>> vtk_mesh_data( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func, PD_TYPE shrink_factor ) {
+            auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
+            auto ptr_weights = weights.data();
+
+            sdot::VtkOutput<0> vtk_output; // ( { "weight", "num", "kind" } )
+
+            find_radial_func( func, [&]( const auto &ft ) {
+                grid.for_each_laguerre_cell(
+                    [&]( auto &lc, std::size_t num_dirac_0, int ) {
+                        sdot::VtkOutput<0> local_vtk_output; // ( { "weight", "num", "kind" } )
+                        domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
+                            if ( space_func )
+                                cp.display( local_vtk_output ); // , { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ) }
+                        } );
+                        local_vtk_output.merge_polygons();
+                        vtk_output.append( local_vtk_output );
+                    },
+                    domain.bounds.englobing_convex_polyhedron(),
+                    ptr_positions,
+                    ptr_weights,
+                    positions.shape( 0 ),
+                    false,
+                    ft.need_ball_cut()
+                );
+            } );
+
+            return { vtk_output.cells(), vtk_output.cell_types(), vtk_output.points() };
         }
 
         template<class Domain,class FUNC>
@@ -764,6 +807,9 @@ namespace {
             pybind11::array_t<TF> distances_from_boundaries_##NAME( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, bool count_domain_boundaries ) { \
                 return distances_from_boundaries( points, positions, weights, domain, func, count_domain_boundaries ); \
             } \
+            std::tuple<std::vector<PT>,std::vector<PT>,std::vector<PD_TYPE>> vtk_mesh_data_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, TF shrink_factor ) { \
+                return vtk_mesh_data( positions, weights, domain, func, shrink_factor ); \
+            } \
             void display_vtk_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, const char *filename, bool points, bool centroids ) { \
                 display_vtk( positions, weights, domain, func, filename, points, centroids ); \
             } \
@@ -830,6 +876,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
                 .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_##NAME                           , "" ) \
                 .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_##NAME                           , "" ) \
                 .def( "centroids"                                           , &PowerDiagramZGrid::centroids_##NAME                                           , "" ) \
+                .def( "vtk_mesh_data"                                       , &PowerDiagramZGrid::vtk_mesh_data_##NAME                                        , "" ) \
                 .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk_##NAME                                         , "" ) \
                 .def( "display_html_canvas"                                 , &PowerDiagramZGrid::display_html_canvas_##NAME                                 , "" ) \
                 .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions_##NAME, "" ) \

@@ -1,10 +1,14 @@
-
 import numpy as np
 import cupy as cp
 from cupyx.scipy.sparse import csr_matrix
-from cupyx.linalg.sparse.solve import lschol
+# from cupyx.linalg.sparse._solve import csr_matrix
+from cupyx.linalg.sparse._solve import lschol
     
 class Solver:
+    """
+       Solver that uses cupy (that can be installed for instance using `pip install cupy`)
+    """
+    
     def __init__(self):
         self.dtype = np.float64
 
