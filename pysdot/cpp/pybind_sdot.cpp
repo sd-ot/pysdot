@@ -597,7 +597,9 @@ namespace {
                                 cp.display( local_vtk_output ); // , { ptr_weights[ num_dirac_0 ], TF( num_dirac_0 ), TF( 0 ) }
                         } );
                         local_vtk_output.merge_polygons();
+                        vtk_output.mutex.lock();
                         vtk_output.append( local_vtk_output );
+                        vtk_output.mutex.unlock();
                     },
                     domain.bounds.englobing_convex_polyhedron(),
                     ptr_positions,
