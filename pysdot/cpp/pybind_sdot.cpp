@@ -809,7 +809,7 @@ namespace {
             pybind11::array_t<TF> distances_from_boundaries_##NAME( pybind11::array_t<PD_TYPE> &points, pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, bool count_domain_boundaries ) { \
                 return distances_from_boundaries( points, positions, weights, domain, func, count_domain_boundaries ); \
             } \
-            std::tuple<std::vector<PT>,std::vector<PT>,std::vector<PD_TYPE>> vtk_mesh_data_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, TF shrink_factor ) { \
+            std::tuple<std::vector<std::size_t>,std::vector<std::size_t>,std::vector<PD_TYPE>> vtk_mesh_data_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, TF shrink_factor ) { \
                 return vtk_mesh_data( positions, weights, domain, func, shrink_factor ); \
             } \
             void display_vtk_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, const char *filename, bool points, bool centroids ) { \
