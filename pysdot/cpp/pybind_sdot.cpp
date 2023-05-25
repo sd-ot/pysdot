@@ -582,7 +582,7 @@ namespace {
         }
 
         template<class Domain,class FUNC>
-        std::tuple<std::vector<PT>,std::vector<PT>,std::vector<PD_TYPE>> vtk_mesh_data( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func, PD_TYPE shrink_factor ) {
+        std::tuple<std::vector<std::size_t>,std::vector<std::size_t>,std::vector<PD_TYPE>> vtk_mesh_data( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func, PD_TYPE shrink_factor ) {
             auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
             auto ptr_weights = weights.data();
 
