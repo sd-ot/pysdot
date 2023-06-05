@@ -5,8 +5,11 @@ comp:
 	rm -rf build/ 2> /dev/null
 	python setup.py build
 
-install: comp
+install_user: comp
 	python setup.py install --user 
+	
+install: comp
+	python setup.py install
 	
 test:
 	python -m unittest discover tests

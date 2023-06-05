@@ -63,6 +63,8 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
     def run(self):
         if not os.path.isdir('./ext/sdot'):
             subprocess.check_call(['git', 'clone', 'https://github.com/sd-ot/sdot.git', 'ext/sdot'])
+        else:
+            subprocess.check_call(['git', 'pull'], cwd='ext/sdot')
         if not os.path.isdir('./ext/eigen3'):
             subprocess.check_call(['git', 'clone', 'https://github.com/eigenteam/eigen-git-mirror.git', 'ext/eigen3'])
         if not os.path.isdir('./ext/pybind11'):
