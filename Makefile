@@ -12,6 +12,7 @@ test:
 	python -m unittest discover tests
 
 pip:
+	rm -rf dist/*
 	python setup.py sdist
 	twine upload --verbose dist/*
 
