@@ -10,6 +10,10 @@ import importlib
 def dist(a, b):
     return np.linalg.norm(a - b, 2)
 
+class BadInitialGuess(Exception):
+    def __init__(self, ot):
+        self.ot = ot
+
 
 class OptimalTransport:
     def __init__(self, positions=None, weights=None, domain=None, masses=None, radial_func=RadialFuncUnit(),
@@ -87,19 +91,27 @@ class OptimalTransport:
 
         linear_solver = self._get_linear_solver()
         old_weights = self.pd.weights + 0.0
-        for _ in range(self.max_iter):
+        for num_iter in range(self.max_iter):
             # derivatives
             mvs = self.pd.der_integrals_wrt_weights(stop_if_void=True)
             if mvs.error:
-                ratio = 0.5
-                self.pd.set_weights(
-                    (1 - ratio) * old_weights + ratio * self.pd.weights
-                )
-                if ret_if_err:
-                    return True
-                if (self.verbosity > 1):
-                    print("bim (going back)")
-                continue
+                if num_iter == 0:
+                    # print("initial guess for the weight lead to void cells, trying with 0 weights")
+                    # self.pd.set_weights( self.pd.weights * 0.0 )
+                    # mvs = self.pd.der_integrals_wrt_weights(stop_if_void=True)
+                    # if mvs.error:
+                    #     raise BadInitialGuess( self )
+                    raise BadInitialGuess( self )
+                else:
+                    ratio = 0.5
+                    self.pd.set_weights(
+                        (1 - ratio) * old_weights + ratio * self.pd.weights
+                    )
+                    if ret_if_err:
+                        return True
+                    if (self.verbosity > 1):
+                        print("bim (going back)")
+                    continue
             old_weights = self.pd.weights
 
             #
