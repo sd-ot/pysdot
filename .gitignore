@@ -18,3 +18,5 @@ dist/
 .ipynb_checkpoints
 clay.jpg
 octave-workspace
+boost_1_82_0*
+

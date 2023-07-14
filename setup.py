@@ -20,14 +20,12 @@ if 'linux' in sys.platform:
 
 ext_modules = []
 
-include_dirs = [ 'ext/eigen3', 'ext/pybind11/include', '/usr/share/miniconda/envs/test/include', '$PREFIX/include', '$CONDA_PREFIX/include' ]
+include_dirs = [ 'boost_1_82_0', 'ext/eigen3', 'ext/pybind11/include', '/usr/share/miniconda/envs/test/include', '$PREFIX/include', '$CONDA_PREFIX/include' ]
 for ev in [ ( "CONDA_PREFIX", "/include" ), ( "PREFIX", "/include" ), ( "BUILD_PREFIX", "/include" ), ( "LIBRARY_INC", "" ) ]:
     try:
         include_dirs.append( os.environ.get( ev[ 0 ] ) + ev[ 1 ] )
     except:
         pass
-
-print( "=============================== include_dirs =============================", include_dirs )
 
 # Arfd
 for ext in ["Arfd"]:
@@ -69,11 +67,15 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
             subprocess.check_call(['git', 'clone', 'https://github.com/eigenteam/eigen-git-mirror.git', 'ext/eigen3'])
         if not os.path.isdir('./ext/pybind11'):
             subprocess.check_call(['git', 'clone', 'https://github.com/pybind/pybind11.git', 'ext/pybind11'])
+        if not os.path.isdir('./boost_1_82_0'):
+            # subprocess.check_call(['git', 'clone', 'https://github.com/boostorg/dynamic_bitset.git', 'ext/dynamic_bitset'])
+            subprocess.check_call(['wget', 'https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.bz2'])
+            subprocess.check_call(['tar', 'xjf', 'boost_1_82_0.tar.bz2'])
         setuptools.command.build_py.build_py.run(self)
 
 setup(
     name='pysdot',
-    version='0.2.11',
+    version='0.2.15',
     packages=find_packages(exclude=[
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'
