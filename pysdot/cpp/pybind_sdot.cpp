@@ -878,7 +878,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
                 .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_##NAME                           , "" ) \
                 .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_##NAME                           , "" ) \
                 .def( "centroids"                                           , &PowerDiagramZGrid::centroids_##NAME                                           , "" ) \
-                .def( "vtk_mesh_data"                                       , &PowerDiagramZGrid::vtk_mesh_data_##NAME                                        , "" ) \
+                .def( "vtk_mesh_data"                                       , &PowerDiagramZGrid::vtk_mesh_data_##NAME                                       , "" ) \
                 .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk_##NAME                                         , "" ) \
                 .def( "display_html_canvas"                                 , &PowerDiagramZGrid::display_html_canvas_##NAME                                 , "" ) \
                 .def( "der_centroids_and_integrals_wrt_weight_and_positions", &PowerDiagramZGrid::der_centroids_and_integrals_wrt_weight_and_positions_##NAME, "" ) \

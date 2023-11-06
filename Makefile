@@ -2,7 +2,7 @@ all: install
 
 comp:
 	test -e ext/sdot || git clone https://github.com/sd-ot/sdot.git ext/sdot
-	rm -rf build/ 2> /dev/null
+	rm -rf build/ dist/ pysdot.egg-info/ 2> /dev/null
 	python setup.py build
 
 install_user: comp

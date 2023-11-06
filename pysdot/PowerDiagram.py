@@ -16,7 +16,7 @@ class PowerDiagram:
         self._positions_are_new = True
         self._weights_are_new = True
         self._domain_is_new = True
-        self._replications = replications
+        self._replications = replications.copy()
         self._inst = None
 
         if not ( domain is None ):
@@ -458,6 +458,7 @@ class PowerDiagram:
             self._inst = module.PowerDiagramZGrid(11)
             for t in self._replications:
                 self._inst.add_replication( np.ascontiguousarray( t ) )
+            self._replications = []
 
         self._inst.update(
             np.ascontiguousarray( self.positions ),
