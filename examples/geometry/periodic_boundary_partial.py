@@ -27,7 +27,7 @@ import numpy as np
 
 # print( ot.pd.der_centroids_and_integrals_wrt_weight_and_positions() )
 def get_pd( dw = 0.0, dx = 0.0, dy = 0.0 ):
-    positions = np.array( [ [ 0.25 + dx, 0.25 + dy ], [ 0.75, 0.5 ] ] )
+    positions = np.array( [ [ 0.25 + dx, 0.5 + dy ], [ 0.75, 0.5 ] ] )
     weights = [ dw, 0.0 ]
 
     return PowerDiagram( positions, weights = weights )
