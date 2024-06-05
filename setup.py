@@ -68,7 +68,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
         if not os.path.isdir('./boost_1_82_0'):
             # subprocess.check_call(['git', 'clone', 'https://github.com/boostorg/dynamic_bitset.git', 'ext/dynamic_bitset'])
             print( "10" )
-            subprocess.check_call(['wget', 'https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz', '-o', 'boost_1_82_0.tar.gz'])
+            subprocess.check_call(['wget', '-o', 'boost_1_82_0.tar.gz', 'https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz'])
             subprocess.check_call(['tar', 'xzf', 'boost_1_82_0.tar.gz'])
             print( "11" )
         print( "13" )
