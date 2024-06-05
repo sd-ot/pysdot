@@ -60,17 +60,18 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
     def run(self):
         if not os.path.isdir('./ext/sdot'):
-            subprocess.check_call(['git', 'clone', 'https://github.com/sd-ot/sdot.git', 'ext/sdot'])
+            subprocess.run(['git', 'clone', 'https://github.com/sd-ot/sdot.git', 'ext/sdot'])
         if not os.path.isdir('./ext/eigen3'):
-            subprocess.check_call(['git', 'clone', 'https://github.com/eigenteam/eigen-git-mirror.git', 'ext/eigen3'])
+            subprocess.run(['git', 'clone', 'https://github.com/eigenteam/eigen-git-mirror.git', 'ext/eigen3'])
         if not os.path.isdir('./ext/pybind11'):
-            subprocess.check_call(['git', 'clone', 'https://github.com/pybind/pybind11.git', 'ext/pybind11'])
+            subprocess.run(['git', 'clone', 'https://github.com/pybind/pybind11.git', 'ext/pybind11'])
         if not os.path.isdir('./boost_1_82_0'):
-            # subprocess.check_call(['git', 'clone', 'https://github.com/boostorg/dynamic_bitset.git', 'ext/dynamic_bitset'])
+            # subprocess.run(['git', 'clone', 'https://github.com/boostorg/dynamic_bitset.git', 'ext/dynamic_bitset'])
             print( "10" )
-            subprocess.check_call(['wget', '-o', 'boost_1_82_0.tar.gz', 'https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz'])
-            subprocess.check_call(['tar', 'xzf', 'boost_1_82_0.tar.gz'])
+            subprocess.run(['wget', 'https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz', '-o', 'boost_1_82_0.tar.gz'])
             print( "11" )
+            subprocess.run(['tar', 'xzf', 'boost_1_82_0.tar.gz'])
+            print( "12" )
         print( "13" )
         setuptools.command.build_py.build_py.run(self)
 
