@@ -198,7 +198,7 @@ namespace {
         PyConvexPolyhedraAssembly() {
         }
 
-        void add_box( pybind11::array_t<PD_TYPE> &min_pos, pybind11::array_t<PD_TYPE> &max_pos, PD_TYPE coeff, std::size_t cut_id ) {
+        void add_box( pybind11::array_t<PD_TYPE> &min_pos, pybind11::array_t<PD_TYPE> &max_pos, PD_TYPE coeff, std::int64_t cut_id ) {
             auto buf_min_pos = min_pos.request(); auto ptr_min_pos = (PD_TYPE *)buf_min_pos.ptr;
             auto buf_max_pos = max_pos.request(); auto ptr_max_pos = (PD_TYPE *)buf_max_pos.ptr;
             if ( min_pos.size() != PyPc::dim )

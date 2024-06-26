@@ -20,7 +20,7 @@ class ConvexPolyhedraAssembly:
             np.ascontiguousarray( a_min_pos ),
             np.ascontiguousarray( a_max_pos ),
             self._type(coeff),
-            np.uint64(cut_id)
+            np.int64(cut_id)
         )
         
     def sub_box(self, min_pos, max_pos, coeff=1.0, cut_id=-1):
