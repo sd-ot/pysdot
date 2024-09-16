@@ -23,6 +23,15 @@ class ConvexPolyhedraAssembly:
             np.int64(cut_id)
         )
         
+    def add_simplex(self, points, coeff=1.0, cut_id=-1):
+        a_points = np.array(points, dtype=self._type)
+        inst = self._update_inst([a_points.shape[1]])
+        inst.add_simplex(
+            np.ascontiguousarray( a_points ),
+            self._type(coeff),
+            np.int64(cut_id)
+        )
+        
     def sub_box(self, min_pos, max_pos, coeff=1.0, cut_id=-1):
         self.add_box( min_pos, max_pos, - coeff, cut_id )
 

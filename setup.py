@@ -17,6 +17,7 @@ if 'darwin' in sys.platform:
 if 'linux' in sys.platform:
     # extra_compile_args.append("-march=nocona")
     extra_compile_args.append("-ffast-math")
+    extra_compile_args.append("-std=c++17")
 
 ext_modules = []
 
@@ -67,17 +68,13 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
             subprocess.run(['git', 'clone', 'https://github.com/pybind/pybind11.git', 'ext/pybind11'], check=True)
         if not os.path.isdir('./boost_1_82_0'):
             # subprocess.run(['git', 'clone', 'https://github.com/boostorg/dynamic_bitset.git', 'ext/dynamic_bitset'], check=True)
-            print( "10" )
             subprocess.run('curl -L -o boost_1_82_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz', check=True, shell=True)
-            print( "11" )
             subprocess.run(['tar', 'xzf', 'boost_1_82_0.tar.gz'], check=True)
-            print( "12" )
-        print( "13" )
         setuptools.command.build_py.build_py.run(self)
 
 setup(
     name='pysdot',
-    version='0.2.22',
+    version='0.2.23',
     packages=find_packages(exclude=[
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'

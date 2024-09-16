@@ -208,6 +208,15 @@ namespace {
             bounds.add_box( ptr_min_pos, ptr_max_pos, coeff, cut_id );
         }
 
+        void add_simplex( pybind11::array_t<PD_TYPE> &points, PD_TYPE coeff, std::int64_t cut_id ) {
+            auto buf_points = points.request(); auto ptr_points = (PD_TYPE *)buf_points.ptr;
+            if ( points.shape( 0 ) != PyPc::dim + 1 )
+                throw pybind11::value_error( "wrong dimensions for points" );
+            if ( points.shape( 1 ) != PyPc::dim )
+                throw pybind11::value_error( "wrong dimensions for points" );
+            bounds.add_simplex( ptr_points, coeff, cut_id );
+        }
+
         void add_convex_polyhedron( pybind11::array_t<PD_TYPE> &positions_and_normals, PD_TYPE coeff, std::size_t cut_id ) {
             auto buf_pan = positions_and_normals.request(); auto ptr_pan = (PD_TYPE *)buf_pan.ptr;
             if ( positions_and_normals.shape( 1 ) != 2 * PyPc::dim )
@@ -847,6 +856,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
     pybind11::class_<ConvexPolyhedraAssembly>( m, "ConvexPolyhedraAssembly" )
         .def( pybind11::init<>()                                                                                                                             , "" )
         .def( "add_convex_polyhedron"                               , &ConvexPolyhedraAssembly::add_convex_polyhedron                                        , "" )
+        .def( "add_simplex"                                         , &ConvexPolyhedraAssembly::add_simplex                                                  , "" )
         .def( "add_box"                                             , &ConvexPolyhedraAssembly::add_box                                                      , "" )
         .def( "normalize"                                           , &ConvexPolyhedraAssembly::normalize                                                    , "" )
         .def( "display_boundaries_vtk"                              , &ConvexPolyhedraAssembly::display_boundaries_vtk                                       , "" )
