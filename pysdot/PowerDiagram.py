@@ -120,6 +120,23 @@ class PowerDiagram:
         )
 
     def der_centroids_and_integrals_wrt_weight_and_positions(self):
+        """ return a "system" which can be converted to a csr_matrix.
+            For instance :
+                from scipy.sparse import csr_matrix
+                mvs = pd.der_integrals_wrt_weights()        
+                M = csr_matrix( ( mvs.m_values, mvs.m_columns, mvs.m_offsets ) )
+                # M.todense() to get a dense matrix
+                
+            It contains blocks of size (d+1)² (ex: 4x4 in 3D)
+                rows represent d_centroid_x_0, d_centroid_y_0, ..., then d_integral_0 (for cell 0)
+                               d_centroid_x_1, ... (for cell 0)
+                               ...
+                cols represent dirac_pos_x_0, dirac_pos_x_1, ... weight_0 (for cell 0)
+                               dirac_pos_x_0, ... (for cell 1)
+                               ...
+
+          Ex in 2D, 
+        """
         inst = self._updated_grid()
         return inst.der_centroids_and_integrals_wrt_weight_and_positions(
             np.ascontiguousarray( self.positions ),
