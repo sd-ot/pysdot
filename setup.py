@@ -21,7 +21,7 @@ if 'linux' in sys.platform:
 
 ext_modules = []
 
-include_dirs = [ 'boost_1_82_0', 'ext/eigen3', 'ext/pybind11/include', '/usr/share/miniconda/envs/test/include', '$PREFIX/include', '$CONDA_PREFIX/include' ]
+include_dirs = [ 'boost_1_87_0', 'ext/eigen3', 'ext/pybind11/include', '/usr/share/miniconda/envs/test/include', '$PREFIX/include', '$CONDA_PREFIX/include' ]
 for ev in [ ( "CONDA_PREFIX", "/include" ), ( "PREFIX", "/include" ), ( "BUILD_PREFIX", "/include" ), ( "LIBRARY_INC", "" ) ]:
     try:
         include_dirs.append( os.environ.get( ev[ 0 ] ) + ev[ 1 ] )
@@ -66,15 +66,15 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
             subprocess.run(['git', 'clone', 'https://github.com/eigenteam/eigen-git-mirror.git', 'ext/eigen3'], check=True)
         if not os.path.isdir('./ext/pybind11'):
             subprocess.run(['git', 'clone', 'https://github.com/pybind/pybind11.git', 'ext/pybind11'], check=True)
-        if not os.path.isdir('./boost_1_82_0'):
+        if not os.path.isdir('./boost_1_87_0'):
             # subprocess.run(['git', 'clone', 'https://github.com/boostorg/dynamic_bitset.git', 'ext/dynamic_bitset'], check=True)
-            subprocess.run('curl -L -o boost_1_82_0.tar.gz https://boostorg.jfrog.io/artifactory/main/release/1.82.0/source/boost_1_82_0.tar.gz', check=True, shell=True)
-            subprocess.run(['tar', 'xzf', 'boost_1_82_0.tar.gz'], check=True)
+            subprocess.run('curl -L -o boost_1_87_0.tar.gz https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.gz', check=True, shell=True)
+            subprocess.run(['tar', 'xzf', 'boost_1_87_0.tar.gz'], check=True)
         setuptools.command.build_py.build_py.run(self)
 
 setup(
     name='pysdot',
-    version='0.2.24',
+    version='0.2.30',
     packages=find_packages(exclude=[
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'
