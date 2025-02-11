@@ -217,7 +217,7 @@ namespace {
             bounds.add_simplex( ptr_points, coeff, cut_id );
         }
 
-        void add_convex_polyhedron( pybind11::array_t<PD_TYPE> &positions_and_normals, PD_TYPE coeff, std::size_t cut_id ) {
+        void add_convex_polyhedron( pybind11::array_t<PD_TYPE> &positions_and_normals, PD_TYPE coeff, std::int64_t cut_id ) {
             auto buf_pan = positions_and_normals.request(); auto ptr_pan = (PD_TYPE *)buf_pan.ptr;
             if ( positions_and_normals.shape( 1 ) != 2 * PyPc::dim )
                 throw pybind11::value_error( "wrong dimensions for positions_and_normals" );
