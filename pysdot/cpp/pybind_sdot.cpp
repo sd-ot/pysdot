@@ -181,8 +181,8 @@ namespace {
     };
 
     struct PyPc {
+        // static constexpr int nb_bits_per_axis   = 31;
         static constexpr int allow_translations = 1;
-        static constexpr int nb_bits_per_axis   = 31;
         static constexpr int allow_ball_cut     = 1;
         static constexpr int dim                = PD_DIM;
         using                TI                 = std::size_t;

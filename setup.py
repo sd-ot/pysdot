@@ -40,7 +40,7 @@ for ext in ["Arfd"]:
 
 # PowerDiagram
 for TF in ["double"]:
-    for dim in [2, 3]:
+    for dim in [2, 3]: # 
         name = 'pybind_sdot_{}d_{}'.format(dim, TF)
         ext_modules.append(Extension(
             name,
@@ -74,7 +74,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
 setup(
     name='pysdot',
-    version='0.2.32',
+    version='0.2.34',
     packages=find_packages(exclude=[
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'

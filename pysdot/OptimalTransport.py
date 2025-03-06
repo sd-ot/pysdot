@@ -78,11 +78,13 @@ class OptimalTransport:
             self.pd.set_domain( domain )
 
         if self.masses is None:
+            N = self.pd.positions.shape[0]
             if isinstance(self.pd.radial_func, RadialFuncUnit):
-                N = self.pd.positions.shape[0]
                 self.masses = np.ones(N) * self.pd.domain.measure() / N
             elif isinstance(self.pd.radial_func, RadialFuncInBall):
                 self.masses = np.ones(N) * 1e-6
+            elif isinstance(self.pd.radial_func, RadialFuncEntropy):
+                self.masses = np.ones(N) * self.pd.domain.measure() / N
             else:
                 TODO
 

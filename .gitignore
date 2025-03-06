@@ -22,3 +22,5 @@ boost_1_82_0*
 loc/
 .DS_Store
 
+*.tar.gz
+boost_1_87_0/
