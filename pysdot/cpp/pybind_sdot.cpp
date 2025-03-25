@@ -5,6 +5,7 @@
 #include "../../ext/sdot/src/sdot/Support/Mpi.cpp"
 
 #include "../../ext/sdot/src/sdot/Integration/Arfd.cpp"
+#include <stdexcept>
 
 #ifdef PD_WANT_STAT
 #include "../../ext/sdot/src/sdot/Support/Stat.cpp"
@@ -33,6 +34,14 @@
 #include <pybind11/stl.h>
 #include <memory>
 
+#ifndef PD_DIM
+#define PD_DIM 2
+#endif // PD_DIM
+
+#ifndef PD_TYPE
+#define PD_TYPE double
+#endif // PD_TYPE
+
 namespace {
     constexpr int dim = PD_DIM;
     using TF = PD_TYPE;
@@ -51,6 +60,17 @@ namespace {
 
             is >> eps;
             sdot::FunctionEnum::ExpWmR2db<PD_TYPE> f{ eps };
+            fu( f );
+            return;
+        }
+
+        if ( func.size() > 19 && func.substr( 0, 18 ) == "compressible_func(" ) {
+            std::istringstream is( func.substr( 18 ) );
+            
+            PD_TYPE kappa, gamma, g, f_cor, pi_0, c_p;
+            is >> kappa >> gamma >> g >> f_cor >> pi_0 >> c_p;
+
+            sdot::FunctionEnum::CompressibleFunc<PD_TYPE> f{ kappa, gamma, g, f_cor, pi_0, c_p };
             fu( f );
             return;
         }

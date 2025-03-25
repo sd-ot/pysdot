@@ -9,7 +9,7 @@ import os
 
 extra_compile_args = []
 if 'darwin' in sys.platform:
-    extra_compile_args.append("-std=c++14")
+    extra_compile_args.append("-std=c++17")
     extra_compile_args.append("-stdlib=libc++")
     extra_compile_args.append("-Wno-missing-braces")
     # extra_compile_args.append("-march=nocona")
