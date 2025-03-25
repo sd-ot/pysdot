@@ -1,4 +1,5 @@
 from .RadialFuncEntropy import RadialFuncEntropy
+from .CompressibleFunc import CompressibleFunc
 from .RadialFuncPpWmR2 import RadialFuncPpWmR2
 from .RadialFuncInBall import RadialFuncInBall
 from .RadialFuncUnit import RadialFuncUnit
