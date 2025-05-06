@@ -64,16 +64,16 @@ namespace {
             return;
         }
 
-        if ( func.size() > 19 && func.substr( 0, 18 ) == "compressible_func(" ) {
-            std::istringstream is( func.substr( 18 ) );
+        // if ( func.size() > 19 && func.substr( 0, 18 ) == "compressible_func(" ) {
+        //     std::istringstream is( func.substr( 18 ) );
             
-            PD_TYPE kappa, gamma, g, f_cor, pi_0, c_p;
-            is >> kappa >> gamma >> g >> f_cor >> pi_0 >> c_p;
+        //     PD_TYPE kappa, gamma, g, f_cor, pi_0, c_p;
+        //     is >> kappa >> gamma >> g >> f_cor >> pi_0 >> c_p;
 
-            sdot::FunctionEnum::CompressibleFunc<PD_TYPE> f{ kappa, gamma, g, f_cor, pi_0, c_p };
-            fu( f );
-            return;
-        }
+        //     sdot::FunctionEnum::CompressibleFunc<PD_TYPE> f{ kappa, gamma, g, f_cor, pi_0, c_p };
+        //     fu( f );
+        //     return;
+        // }
 
         if ( func == "r**2" || func == "r^2" ) {
             sdot::FunctionEnum::R2 f;
