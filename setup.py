@@ -74,7 +74,7 @@ class BuildPyCommand(setuptools.command.build_py.build_py):
 
 setup(
     name='pysdot',
-    version='0.2.35',
+    version='0.2.38',
     packages=find_packages(exclude=[
         'hugo', 'ext', 'build', 'dist',
         'examples', 'results', 'tests'

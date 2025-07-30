@@ -182,6 +182,30 @@ class PowerDiagram:
             shrink_factor
         )
 
+    def cell_polyhedra(self):
+        """ 
+            For the 2D case, 
+                return a tuple `( offsets, coordinates )`
+                    - `offsets` gives the first index in the `coordinates` matrix for each cell, counter-clockwise
+                    - a matrix of coordinates 
+                -> coordinates for each cell are given by `coordinates[ offset[ num_cell + 0 ] : offset[ num_cell + 1 ] ]`
+        """
+        inst = self._updated_grid()
+        res = inst.cell_polyhedra(
+            np.ascontiguousarray( self.positions ),
+            np.ascontiguousarray( self.weights ),
+            self.domain._inst,
+            self.radial_func.name()
+        )
+
+        # 2D
+        nd = self.positions.shape[ 1 ]
+        if nd == 2:
+            return ( res[ 0 ], np.reshape( res[ 1 ], [ -1, nd ] ) )
+        
+        # 3D
+        return ( res[ 0 ], res[ 1 ], np.reshape( res[ 2 ], [ -1, nd ] ) )
+
     # make a .asy file for a representation of the power diagram
     def display_asy(self, filename, preamble="", closing="", output_format="pdf", linewidth=0.02, dotwidth=0.0, values=np.array([]), colormap="inferno", avoid_bounds=False, min_rf=1, max_rf=0):
         dn = os.path.dirname( filename )

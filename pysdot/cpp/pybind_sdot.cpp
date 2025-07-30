@@ -5,6 +5,7 @@
 #include "../../ext/sdot/src/sdot/Support/Mpi.cpp"
 
 #include "../../ext/sdot/src/sdot/Integration/Arfd.cpp"
+#include <algorithm>
 #include <stdexcept>
 
 #ifdef PD_WANT_STAT
@@ -210,8 +211,9 @@ namespace {
         using                TF                 = PD_TYPE;
     };
 
-    template<int dim,class TF>
+    template<int dim_,class TF>
     struct PyConvexPolyhedraAssembly {
+        static constexpr int dim = dim_;
         using TB = sdot::ConvexPolyhedronAssembly<PyPc>;
         using Pt = TB::Pt;
 
@@ -378,8 +380,9 @@ namespace {
         TB bounds;
     };
 
-    template<int dim,class TF>
+    template<int dim_,class TF>
     struct PyScaledImage {
+        static constexpr int dim = dim_;
         using TB = sdot::ScaledImage<PyPc>;
         using Pt = typename TB::Pt;
         using TI = typename TB::TI;
@@ -608,6 +611,114 @@ namespace {
             }
 
             vtk_output.save( filename );
+        }
+
+        template<class Domain,class FUNC>
+        std::tuple<std::vector<std::size_t>,std::vector<std::size_t>,std::vector<PD_TYPE>> cell_polyhedra_3( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func ) {
+            auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
+            auto ptr_weights = weights.data();
+
+            std::vector<std::vector<std::vector<PD_TYPE>>> coordinates_for_each_cell( weights.size() );
+            
+            std::mutex m;
+            find_radial_func( func, [&]( const auto &ft ) {
+                grid.for_each_laguerre_cell(
+                    [&]( auto &lc, std::size_t num_dirac_0, int ) {
+                        domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
+                            if ( ! space_func )
+                                return;
+                            std::vector<std::vector<PD_TYPE>> &c = coordinates_for_each_cell[ num_dirac_0 ];
+                            m.lock();
+                            c.clear();
+
+                            for( const auto &fp : cp.faces ) {
+                                std::vector<PD_TYPE> l;
+                                for( auto e = fp.edges.begin(); e != fp.edges.end(); ++e )
+                                    for( int d = 0; d < 3; ++d )
+                                        l.push_back( e->n0->pos[ d ] );
+                                c.push_back( std::move( l ) );
+                            }
+
+                            m.unlock();
+                        } );
+                    },
+                    domain.bounds.englobing_convex_polyhedron(),
+                    ptr_positions,
+                    ptr_weights,
+                    positions.shape( 0 ),
+                    false,
+                    ft.need_ball_cut()
+                );
+            } );
+
+            std::vector<std::size_t> polyhedra_offsets;
+            std::vector<std::size_t> polygon_offsets;
+            std::vector<PD_TYPE> coordinates;
+            for( std::size_t i = 0; i < coordinates_for_each_cell.size(); ++i ) {
+                polyhedra_offsets.push_back( polygon_offsets.size() );
+                for( auto &polygon : coordinates_for_each_cell[ i ] ) {
+                    polygon_offsets.push_back( coordinates.size() / dim );
+                    for( auto v : polygon )
+                        coordinates.push_back( v );
+                }
+            }
+            polyhedra_offsets.push_back( polygon_offsets.size() );
+            polygon_offsets.push_back( coordinates.size() / dim );                
+
+            return { polyhedra_offsets, polygon_offsets, coordinates };
+        }
+
+        template<class Domain,class FUNC>
+        std::tuple<std::vector<std::size_t>,std::vector<PD_TYPE>> cell_polyhedra_2( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func ) {
+            auto ptr_positions = reinterpret_cast<const Pt *>( positions.data() );
+            auto ptr_weights = weights.data();
+
+            std::vector<std::vector<PD_TYPE>> coordinates_for_each_cell( weights.size() );
+            
+            std::mutex m;
+            find_radial_func( func, [&]( const auto &ft ) {
+                grid.for_each_laguerre_cell(
+                    [&]( auto &lc, std::size_t num_dirac_0, int ) {
+                        domain.bounds.for_each_intersection( lc, [&]( auto &cp, auto space_func ) {
+                            if ( ! space_func )
+                                return;
+                            std::vector<PD_TYPE> &c = coordinates_for_each_cell[ num_dirac_0 ];
+                            m.lock();
+                            c.clear();
+                            for( std::size_t i = 0; i < cp.nb_points(); ++i ) {
+                                c.push_back( cp.points[ 0 ][ i ] );
+                                c.push_back( cp.points[ 1 ][ i ] );
+                            }
+                            m.unlock();
+                        } );
+                    },
+                    domain.bounds.englobing_convex_polyhedron(),
+                    ptr_positions,
+                    ptr_weights,
+                    positions.shape( 0 ),
+                    false,
+                    ft.need_ball_cut()
+                );
+            } );
+
+            std::vector<std::size_t> indices;
+            std::vector<PD_TYPE> coordinates;
+            for( std::size_t i = 0; i < coordinates_for_each_cell.size(); ++i ) {
+                indices.push_back( coordinates.size() / dim );
+                for( auto v : coordinates_for_each_cell[ i ] )
+                    coordinates.push_back( v );
+            }
+            indices.push_back( coordinates.size() / dim );                
+
+            return { indices, coordinates };
+        }
+
+        template<class Domain,class FUNC>
+        auto cell_polyhedra( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, Domain &domain, const FUNC &func ) {
+            if constexpr ( Domain::dim == 3 )
+                return cell_polyhedra_3( positions, weights, domain, func );
+            else
+                return cell_polyhedra_2( positions, weights, domain, func );
         }
 
         template<class Domain,class FUNC>
@@ -841,6 +952,9 @@ namespace {
             std::tuple<std::vector<std::size_t>,std::vector<std::size_t>,std::vector<PD_TYPE>> vtk_mesh_data_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, TF shrink_factor ) { \
                 return vtk_mesh_data( positions, weights, domain, func, shrink_factor ); \
             } \
+            auto cell_polyhedra_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func ) { \
+                return cell_polyhedra( positions, weights, domain, func ); \
+            } \
             void display_vtk_##NAME( pybind11::array_t<PD_TYPE> &positions, pybind11::array_t<PD_TYPE> &weights, DOMAIN<dim,TF> &domain, const FUNC &func, const char *filename, bool points, bool centroids ) { \
                 display_vtk( positions, weights, domain, func, filename, points, centroids ); \
             } \
@@ -908,6 +1022,7 @@ PYBIND11_MODULE( PD_MODULE_NAME, m ) {
                 .def( "der_integrals_wrt_weights"                           , &PowerDiagramZGrid::der_integrals_wrt_weights_##NAME                           , "" ) \
                 .def( "distances_from_boundaries"                           , &PowerDiagramZGrid::distances_from_boundaries_##NAME                           , "" ) \
                 .def( "centroids"                                           , &PowerDiagramZGrid::centroids_##NAME                                           , "" ) \
+                .def( "cell_polyhedra"                                      , &PowerDiagramZGrid::cell_polyhedra_##NAME                                      , "" ) \
                 .def( "vtk_mesh_data"                                       , &PowerDiagramZGrid::vtk_mesh_data_##NAME                                       , "" ) \
                 .def( "display_vtk"                                         , &PowerDiagramZGrid::display_vtk_##NAME                                         , "" ) \
                 .def( "display_html_canvas"                                 , &PowerDiagramZGrid::display_html_canvas_##NAME                                 , "" ) \
