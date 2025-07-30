@@ -189,6 +189,12 @@ class PowerDiagram:
                     - `offsets` gives the first index in the `coordinates` matrix for each cell, counter-clockwise
                     - a matrix of coordinates 
                 -> coordinates for each cell are given by `coordinates[ offset[ num_cell + 0 ] : offset[ num_cell + 1 ] ]`
+
+            For the 3D case, 
+                return a tuple `( offset_polyhedra, offset_polygons, coordinates )`
+                    - `offset_polyhedra` gives the indices in `offset_polygons`
+                    - `offset_polygons` gives the indices in `coordinates`
+                    - a matrix of coordinates 
         """
         inst = self._updated_grid()
         res = inst.cell_polyhedra(
