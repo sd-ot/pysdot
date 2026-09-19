@@ -4,6 +4,7 @@ build/
 hugo/
 ext/
 __pycache__
+.venv/
 .pysdot*
 .env
 *.egg-info
